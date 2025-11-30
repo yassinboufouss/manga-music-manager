@@ -1,6 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import YouTube, { YouTubePlayer } from 'react-youtube';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -17,6 +17,9 @@ const MusicPlayer = () => {
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
   const intervalRef = useRef<number | null>(null);
+  
+  // State for loading/buffering
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const opts = {
     height: '0', // Hide the video player
@@ -58,6 +61,14 @@ const MusicPlayer = () => {
       }
     };
   }, [isPlaying, updateTime]);
+  
+  // Set loading state when track changes
+  React.useEffect(() => {
+      if (currentTrack) {
+          // Assume loading starts when track ID changes
+          setIsLoading(true);
+      }
+  }, [currentTrack]);
 
 
   const onReady = (event: { target: YouTubePlayer }) => {
@@ -74,21 +85,30 @@ const MusicPlayer = () => {
     if (isPlaying) {
         playerRef.current.playVideo();
     }
+    // Note: We rely on onStateChange to set isLoading=false when playback starts (state 1)
   };
   
   const onStateChange = (event: { data: number }) => {
-    // YouTube Player State: 1=Playing, 2=Paused, 0=Ended
-    if (event.data === 1) {
+    // YouTube Player State: -1=Unstarted, 0=Ended, 1=Playing, 2=Paused, 3=Buffering, 5=Cued
+    const state = event.data;
+    
+    if (state === 1) { // Playing
       setIsPlaying(true);
-    } else if (event.data === 2) {
+      setIsLoading(false); 
+    } else if (state === 2) { // Paused
       setIsPlaying(false);
-    } else if (event.data === 0) {
+      setIsLoading(false);
+    } else if (state === 3 || state === 5 || state === -1) { // Buffering, Cued, Unstarted
+      setIsLoading(true);
+    } else if (state === 0) { // Ended
+      setIsPlaying(false);
+      setIsLoading(false);
       playNext();
     }
   };
 
   const togglePlayPause = () => {
-    if (!playerRef.current) return;
+    if (!playerRef.current || isLoading) return;
 
     if (isPlaying) {
       playerRef.current.pauseVideo();
@@ -131,6 +151,7 @@ const MusicPlayer = () => {
     const currentIndex = currentPlaylist.tracks.findIndex(t => t.id === currentTrack.id);
     const nextIndex = (currentIndex + 1) % currentPlaylist.tracks.length;
     setCurrentTrack(currentPlaylist.tracks[nextIndex]);
+    // When setting a new track, we assume playback should continue
     setIsPlaying(true); 
   };
 
@@ -142,6 +163,7 @@ const MusicPlayer = () => {
       previousIndex = currentPlaylist.tracks.length - 1;
     }
     setCurrentTrack(currentPlaylist.tracks[previousIndex]);
+    // When setting a new track, we assume playback should continue
     setIsPlaying(true); 
   };
   
@@ -195,8 +217,20 @@ const MusicPlayer = () => {
           <Button variant="ghost" size="icon" onClick={playPrevious} className="hover:bg-transparent text-foreground hover:text-primary">
             <SkipBack className="h-5 w-5" />
           </Button>
-          <Button variant="secondary" size="icon" className="rounded-full h-10 w-10 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={togglePlayPause}>
-            {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
+          <Button 
+            variant="secondary" 
+            size="icon" 
+            className="rounded-full h-10 w-10 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50" 
+            onClick={togglePlayPause}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+            ) : isPlaying ? (
+                <Pause className="h-5 w-5 fill-current" />
+            ) : (
+                <Play className="h-5 w-5 fill-current" />
+            )}
           </Button>
           <Button variant="ghost" size="icon" onClick={playNext} className="hover:bg-transparent text-foreground hover:text-primary">
             <SkipForward className="h-5 w-5" />
@@ -211,7 +245,7 @@ const MusicPlayer = () => {
             max={duration} 
             step={1} 
             className="w-full cursor-pointer" 
-            disabled={duration === 0}
+            disabled={duration === 0 || isLoading}
           />
           <span>{formatTime(duration)}</span>
         </div>
