@@ -55,31 +55,7 @@ const AddTrackDialog: React.FC = () => {
   
   const youtubeIdValue = form.watch("youtubeId");
 
-  // Effect to fetch metadata when a valid ID is present
-  useEffect(() => {
-    if (youtubeIdValue && youtubeIdValue.length === 11 && !isFetchingMetadata) {
-      fetchMetadata(youtubeIdValue);
-    }
-  }, [youtubeIdValue, fetchMetadata, isFetchingMetadata]);
-  
-  // Effect to populate form when metadata arrives
-  useEffect(() => {
-    if (metadata) {
-      form.setValue("title", metadata.title, { shouldValidate: true });
-      form.setValue("artist", metadata.artist, { shouldValidate: true });
-      form.setValue("duration", metadata.duration, { shouldValidate: true });
-    }
-  }, [metadata, form]);
-  
-  // Effect to show error if metadata fetching fails
-  useEffect(() => {
-      if (metadataError) {
-          showError(`Metadata fetch failed: ${metadataError}`);
-      }
-  }, [metadataError]);
-
-
-  const onSubmit = async (data: AddTrackFormValues) => {
+  const onSubmit = useCallback(async (data: AddTrackFormValues) => {
     const trackData = {
       id: data.youtubeId,
       title: data.title,
@@ -96,8 +72,45 @@ const AddTrackDialog: React.FC = () => {
       // Error handled in context, but we catch here to prevent dialog closing
       console.error(error);
     }
-  };
+  }, [addTrackToPlaylist, form]);
+
+
+  // Effect to fetch metadata when a valid ID is present
+  useEffect(() => {
+    if (youtubeIdValue && youtubeIdValue.length === 11 && !isFetchingMetadata) {
+      fetchMetadata(youtubeIdValue);
+    }
+  }, [youtubeIdValue, fetchMetadata, isFetchingMetadata]);
   
+  // Effect to populate form and trigger automatic submission when metadata arrives
+  useEffect(() => {
+    if (metadata) {
+      // 1. Populate fields
+      form.setValue("title", metadata.title, { shouldValidate: true });
+      form.setValue("artist", metadata.artist, { shouldValidate: true });
+      form.setValue("duration", metadata.duration, { shouldValidate: true });
+      
+      // 2. Attempt automatic submission
+      // We trigger validation first to ensure all fields are ready and valid
+      form.trigger().then(isValid => {
+          if (isValid) {
+              // Call the submission handler directly, wrapped by RHF's handleSubmit
+              form.handleSubmit(onSubmit)();
+          } else {
+              showError("Fetched metadata failed validation. Please check fields manually.");
+          }
+      });
+    }
+  }, [metadata, form, onSubmit]);
+  
+  // Effect to show error if metadata fetching fails
+  useEffect(() => {
+      if (metadataError) {
+          showError(`Metadata fetch failed: ${metadataError}`);
+      }
+  }, [metadataError]);
+
+
   const handleIdInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
     const extractedId = extractYoutubeId(input);
@@ -121,7 +134,7 @@ const AddTrackDialog: React.FC = () => {
         <DialogHeader>
           <DialogTitle>Add New YouTube Track</DialogTitle>
           <DialogDescription>
-            Paste a YouTube URL or ID. The track details will be fetched automatically.
+            Paste a YouTube URL or ID. The track will be added automatically once details are fetched.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -159,7 +172,7 @@ const AddTrackDialog: React.FC = () => {
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Song Title" {...field} disabled={isFetchingMetadata} />
+                    <Input placeholder="Song Title" {...field} disabled={isFetchingMetadata || form.formState.isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -173,7 +186,7 @@ const AddTrackDialog: React.FC = () => {
                 <FormItem>
                   <FormLabel>Artist</FormLabel>
                   <FormControl>
-                    <Input placeholder="Artist Name" {...field} disabled={isFetchingMetadata} />
+                    <Input placeholder="Artist Name" {...field} disabled={isFetchingMetadata || form.formState.isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,7 +200,7 @@ const AddTrackDialog: React.FC = () => {
                 <FormItem>
                   <FormLabel>Duration (M:SS)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 3:45" {...field} disabled={isFetchingMetadata} />
+                    <Input placeholder="e.g., 3:45" {...field} disabled={isFetchingMetadata || form.formState.isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
