@@ -12,6 +12,7 @@ interface DbTrack {
   artist: string;
   duration: string;
   created_at: string;
+  order_index: number; // Added for reordering
 }
 
 interface DbPlaylist {
@@ -29,15 +30,17 @@ const transformTrack = (dbTrack: DbTrack): Track => ({
   title: dbTrack.title,
   artist: dbTrack.artist,
   duration: dbTrack.duration,
+  orderIndex: dbTrack.order_index, // Added
 });
 
 // Helper function to transform context track to DB insert object
-const transformTrackToDb = (track: Omit<Track, 'dbId'>, playlistId: string) => ({
+const transformTrackToDb = (track: Omit<Track, 'dbId' | 'orderIndex'>, playlistId: string, orderIndex: number) => ({
   playlist_id: playlistId,
   youtube_id: track.id,
   title: track.title,
   artist: track.artist,
   duration: track.duration,
+  order_index: orderIndex, // Include order index on insert
 });
 
 // --- Data Fetching ---
@@ -76,7 +79,7 @@ const fetchUserPlaylist = async (userId: string) => {
     .from('tracks')
     .select('*')
     .eq('playlist_id', playlistId)
-    .order('created_at', { ascending: true });
+    .order('order_index', { ascending: true }); // Order by the new index
 
   if (tracksError) throw tracksError;
 
@@ -100,11 +103,17 @@ export const usePlaylistData = () => {
   // --- Mutations ---
   
   const addTrackMutation = useMutation({
-    mutationFn: async (track: Omit<Track, 'dbId'>) => {
+    mutationFn: async (track: Omit<Track, 'dbId' | 'orderIndex'>) => {
       if (!playlistQuery.data) throw new Error("Playlist data not loaded.");
       
       const playlistId = playlistQuery.data.id;
-      const trackToInsert = transformTrackToDb(track, playlistId);
+      
+      // Determine the next order index (max current index + 1, or 1 if empty)
+      const currentTracks = playlistQuery.data.tracks;
+      const maxOrderIndex = currentTracks.reduce((max, t) => Math.max(max, t.orderIndex || 0), 0);
+      const newOrderIndex = maxOrderIndex + 1;
+      
+      const trackToInsert = transformTrackToDb(track, playlistId, newOrderIndex);
       
       const { data, error } = await supabase
         .from('tracks')
@@ -136,10 +145,35 @@ export const usePlaylistData = () => {
       queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
     },
   });
+  
+  const updateTrackOrderMutation = useMutation({
+    mutationFn: async (updates: { dbId: string; orderIndex: number }[]) => {
+      // Perform a batch update for all tracks whose order changed
+      const updatePromises = updates.map(update => 
+        supabase
+          .from('tracks')
+          .update({ order_index: update.orderIndex })
+          .eq('id', update.dbId)
+      );
+      
+      const results = await Promise.all(updatePromises);
+      
+      const errors = results.map(r => r.error).filter(Boolean);
+      if (errors.length > 0) {
+        throw new Error(`Failed to update track order: ${errors[0]?.message}`);
+      }
+      return updates;
+    },
+    onSuccess: () => {
+      // Invalidate the playlist query to refetch the updated track list
+      queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
+    },
+  });
 
   return {
     playlistQuery,
     addTrackMutation,
     deleteTrackMutation,
+    updateTrackOrderMutation,
   };
 };

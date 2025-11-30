@@ -1,74 +1,28 @@
-import React, { useRef, useEffect, useCallback, forwardRef } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { ListMusic, Play, Loader2 } from 'lucide-react';
 import { useMusicPlayer, Track } from '@/context/MusicPlayerContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/context/SidebarContext';
-import { useIsMobile } from '@/hooks/use-mobile';
 import AddTrackDialog from './AddTrackDialog';
-import DeleteTrackDialog from './DeleteTrackDialog';
-
-interface TrackItemProps {
-  track: Track;
-}
-
-const TrackItem = forwardRef<HTMLDivElement, TrackItemProps>(({ track }, ref) => {
-  const { currentTrack, setCurrentTrack, setIsPlaying, isPlaying } = useMusicPlayer();
-  const { setIsSidebarOpen } = useSidebar();
-  const isMobile = useIsMobile();
-  
-  // Use dbId for comparison if available, otherwise fall back to YouTube ID
-  const isActive = currentTrack?.dbId === track.dbId || (!currentTrack?.dbId && currentTrack?.id === track.id);
-
-  const handleTrackClick = () => {
-    setCurrentTrack(track);
-    setIsPlaying(true);
-    
-    if (isMobile) {
-      setIsSidebarOpen(false);
-    }
-  };
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors group relative",
-        isActive 
-          ? "bg-primary/10 text-primary font-semibold" // Subtle background, bright text
-          : "hover:bg-secondary/50 text-foreground" // Subtle hover
-      )}
-      onClick={handleTrackClick}
-    >
-      <div className="flex items-center space-x-3 overflow-hidden flex-1 min-w-0">
-        {isActive && isPlaying ? (
-          <Play className="h-4 w-4 fill-primary text-primary flex-shrink-0" />
-        ) : (
-          <ListMusic className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-        )}
-        <div className="truncate flex-1">
-          <p className="text-sm truncate">{track.title}</p>
-          <p className={cn("text-xs truncate", isActive ? "text-primary/80" : "text-muted-foreground")}>{track.artist}</p>
-        </div>
-      </div>
-      
-      <div className="flex items-center space-x-2 flex-shrink-0">
-        <span className={cn("text-xs ml-4", isActive ? "text-primary/80" : "text-muted-foreground")}>
-          {track.duration}
-        </span>
-        
-        {/* Delete Button - only show if track has a dbId (i.e., it's persisted) */}
-        {track.dbId && <DeleteTrackDialog track={track} />}
-      </div>
-    </div>
-  );
-});
-
-TrackItem.displayName = "TrackItem";
+import SortableTrackItem from './SortableTrackItem';
+import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { reorderArray } from '@/lib/dnd-utils';
 
 const PlaylistSidebar = () => {
-  const { currentPlaylist, currentTrack, isLoadingData } = useMusicPlayer();
+  const { currentPlaylist, currentTrack, isLoadingData, updateTrackOrder } = useMusicPlayer();
   
+  // Local state for optimistic UI updates during drag
+  const [tracks, setTracks] = useState<Track[]>(currentPlaylist?.tracks || []);
+  
+  // Sync local state when playlist data changes (after fetch/mutation)
+  useEffect(() => {
+    if (currentPlaylist?.tracks) {
+      setTracks(currentPlaylist.tracks);
+    }
+  }, [currentPlaylist?.tracks]);
+
   // Ref for the ScrollArea container
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   // Map to store refs for individual track items
@@ -86,18 +40,41 @@ const PlaylistSidebar = () => {
   // Effect to scroll to the current track when it changes
   useEffect(() => {
     if (currentTrack && scrollAreaRef.current) {
-      // Use dbId if available, otherwise fall back to YouTube ID
-      const trackIdKey = currentTrack.dbId || currentTrack.id;
-      const trackElement = trackRefs.current.get(trackIdKey);
-      
-      if (trackElement) {
-        trackElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-        });
+      const trackIdKey = currentTrack.dbId;
+      if (trackIdKey) {
+        const trackElement = trackRefs.current.get(trackIdKey);
+        
+        if (trackElement) {
+          trackElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest',
+          });
+        }
       }
     }
   }, [currentTrack]);
+  
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      const activeId = active.id as string;
+      const overId = over?.id as string;
+      
+      const newTracks = reorderArray(tracks, activeId, overId, (t) => t.dbId!);
+      
+      // 1. Optimistic UI update
+      setTracks(newTracks);
+      
+      // 2. Persist order to database
+      try {
+        await updateTrackOrder(newTracks);
+      } catch (e) {
+        // If persistence fails, revert to the last known good state (fetched data)
+        setTracks(currentPlaylist?.tracks || []);
+      }
+    }
+  };
   
   if (isLoadingData) {
       return (
@@ -109,7 +86,6 @@ const PlaylistSidebar = () => {
   }
   
   if (!currentPlaylist) {
-      // Should not happen if AuthProvider is working, but good fallback
       return (
           <div className="w-full h-full flex flex-col bg-background text-foreground p-4 border-r border-border">
               <h2 className="text-2xl font-bold mb-6 text-primary">Dyad Music</h2>
@@ -118,6 +94,7 @@ const PlaylistSidebar = () => {
       );
   }
 
+  const sortableIds = tracks.map(t => t.dbId!);
 
   return (
     <div className="w-full h-full flex flex-col bg-background text-foreground p-4 border-r border-border">
@@ -134,21 +111,31 @@ const PlaylistSidebar = () => {
         <AddTrackDialog />
       </div>
 
-      <h3 className="text-lg font-semibold mb-2 mt-4 text-foreground">Tracks ({currentPlaylist.tracks.length})</h3>
+      <h3 className="text-lg font-semibold mb-2 mt-4 text-foreground">Tracks ({tracks.length})</h3>
 
       <ScrollArea className="flex-grow h-0" ref={scrollAreaRef as React.RefObject<HTMLDivElement>}>
-        <div className="space-y-1 pr-4">
-          {currentPlaylist.tracks.map((track) => (
-            <TrackItem 
-              key={track.dbId || track.id} // Use dbId as primary key
-              track={track} 
-              ref={(el) => setTrackRef(track.dbId || track.id, el)}
-            />
-          ))}
-          {currentPlaylist.tracks.length === 0 && (
-              <p className="text-sm text-muted-foreground p-3">No tracks found. Add one above!</p>
-          )}
-        </div>
+        <DndContext
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={sortableIds}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-1 pr-4">
+              {tracks.map((track) => (
+                <SortableTrackItem 
+                  key={track.dbId} 
+                  track={track} 
+                  ref={(el) => setTrackRef(track.dbId!, el)}
+                />
+              ))}
+              {tracks.length === 0 && (
+                  <p className="text-sm text-muted-foreground p-3">No tracks found. Add one above!</p>
+              )}
+            </div>
+          </SortableContext>
+        </DndContext>
       </ScrollArea>
     </div>
   );

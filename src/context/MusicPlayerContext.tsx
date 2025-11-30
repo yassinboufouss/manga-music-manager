@@ -10,6 +10,7 @@ export interface Track {
   title: string;
   artist: string;
   duration: string; // e.g., "3:45"
+  orderIndex: number; // Added for reordering
 }
 
 export interface Playlist {
@@ -25,8 +26,9 @@ interface MusicPlayerContextType {
   setCurrentTrack: (track: Track) => void;
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;
-  addTrackToPlaylist: (track: Omit<Track, 'dbId'>) => Promise<void>;
+  addTrackToPlaylist: (track: Omit<Track, 'dbId' | 'orderIndex'>) => Promise<void>;
   deleteTrack: (trackDbId: string) => Promise<void>;
+  updateTrackOrder: (tracks: Track[]) => Promise<void>;
   isLoadingData: boolean;
 }
 
@@ -38,7 +40,7 @@ interface MusicPlayerProviderProps {
 }
 
 export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
-  const { playlistQuery, addTrackMutation, deleteTrackMutation } = usePlaylistData();
+  const { playlistQuery, addTrackMutation, deleteTrackMutation, updateTrackOrderMutation } = usePlaylistData();
   
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -71,7 +73,7 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
   }, [playlistQuery.data, currentTrack]);
 
 
-  const addTrackToPlaylist = async (track: Omit<Track, 'dbId'>) => {
+  const addTrackToPlaylist = async (track: Omit<Track, 'dbId' | 'orderIndex'>) => {
     try {
       await addTrackMutation.mutateAsync(track);
       showSuccess(`Track "${track.title}" added successfully!`);
@@ -92,6 +94,22 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
       throw error;
     }
   };
+  
+  const updateTrackOrder = async (tracks: Track[]) => {
+      const updates = tracks.map((track, index) => ({
+          dbId: track.dbId!,
+          orderIndex: index + 1, // Use 1-based indexing for order
+      }));
+      
+      try {
+          await updateTrackOrderMutation.mutateAsync(updates);
+          // No success toast here, as it might fire too often during dragging.
+      } catch (error) {
+          console.error("Error updating track order:", error);
+          showError("Failed to save new playlist order.");
+          throw error;
+      }
+  };
 
   const value = {
     currentPlaylist,
@@ -101,6 +119,7 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
     setIsPlaying,
     addTrackToPlaylist,
     deleteTrack,
+    updateTrackOrder,
     isLoadingData,
   };
   
