@@ -20,10 +20,10 @@ const PlaylistListItem: React.FC<PlaylistListItemProps> = ({ playlist, isSelecte
   return (
     <div
       className={cn(
-        "flex items-center justify-between p-1 rounded-lg cursor-pointer transition-colors group",
+        "flex items-center justify-between p-1 rounded-lg cursor-pointer transition-all duration-200 group",
         isSelected 
-          ? "bg-primary text-primary-foreground font-medium hover:bg-primary/90"
-          : "bg-secondary/50 text-secondary-foreground hover:bg-secondary/80"
+          ? "bg-primary text-primary-foreground font-medium hover:bg-primary/90 shadow-md"
+          : "bg-secondary/50 text-secondary-foreground hover:bg-secondary/80 hover:scale-[1.01] transform"
       )}
       onClick={handleSelect}
     >
@@ -38,7 +38,7 @@ const PlaylistListItem: React.FC<PlaylistListItemProps> = ({ playlist, isSelecte
       
       {/* Delete button - hidden if selected, as PlaylistHeaderActions provides a prominent delete button for the active playlist. */}
       {!isSelected && (
-        <div className="ml-2 flex-shrink-0 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="ml-2 flex-shrink-0 pr-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <DeletePlaylistDialog 
             playlistId={playlist.id} 
             playlistName={playlist.name} 
