@@ -255,7 +255,7 @@ const MusicPlayer = () => {
           className="w-10 h-10 sm:w-12 sm:h-12 rounded mr-2 sm:mr-3 object-cover flex-shrink-0"
         />
         <div className='overflow-hidden'>
-          <p className="text-xs sm:text-sm font-medium truncate">{currentTrack.title}</p>
+          <p className="text-xs sm:text-sm font-medium truncate text-white">{currentTrack.title}</p>
           <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{currentTrack.artist}</p>
         </div>
       </div>
