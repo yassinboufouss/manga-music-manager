@@ -12,6 +12,7 @@ import RenamePlaylistDialog from './RenamePlaylistDialog';
 import ClearPlaylistDialog from './ClearPlaylistDialog';
 import LogoutButton from './LogoutButton';
 import PlaylistSelector from './PlaylistSelector';
+import PlaylistHeaderActions from './PlaylistHeaderActions';
 
 const PlaylistSidebar = () => {
   const { currentPlaylist, currentTrack, isLoadingData, updateTrackOrder, selectedPlaylistId } = useMusicPlayer();
@@ -118,7 +119,7 @@ const PlaylistSidebar = () => {
             <h3 className="text-lg font-semibold text-foreground truncate">
                 {currentPlaylist?.name || "Loading Playlist..."}
             </h3>
-            {currentPlaylist && <RenamePlaylistDialog />}
+            {currentPlaylist && <PlaylistHeaderActions />}
         </div>
         <AddTrackDialog />
       </div>

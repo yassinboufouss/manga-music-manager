@@ -31,6 +31,7 @@ interface MusicPlayerContextType {
   selectedPlaylistId: string | null;
   setSelectedPlaylistId: (id: string) => void;
   createPlaylist: (name: string) => Promise<void>;
+  deletePlaylist: (playlistId: string) => Promise<void>;
   
   addTrackToPlaylist: (track: Omit<Track, 'dbId' | 'orderIndex'>) => Promise<void>;
   deleteTrack: (trackDbId: string) => Promise<void>;
@@ -66,6 +67,7 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
       deleteAllTracksMutation, 
       updateTrackOrderMutation,
       createPlaylistMutation,
+      deletePlaylistMutation,
   } = usePlaylistData(selectedPlaylistId, currentPlaylistState); // Pass selected ID and current state to hook
   
   const isLoadingData = isLoadingPlaylists || isLoadingTracks;
@@ -85,6 +87,9 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
       if (playlists && playlists.length > 0 && !selectedPlaylistId) {
           // Select the first playlist by default
           setSelectedPlaylistId(playlists[0].id);
+      } else if (playlists && playlists.length === 0 && selectedPlaylistId) {
+          // If all playlists were deleted, clear selection
+          setSelectedPlaylistId(null);
       }
   }, [playlists, selectedPlaylistId]);
 
@@ -178,12 +183,32 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
           throw error;
       }
   }
+  
+  const deletePlaylist = async (playlistId: string) => {
+      try {
+          await deletePlaylistMutation.mutateAsync(playlistId);
+          showSuccess("Playlist deleted successfully!");
+          
+          // After deletion, automatically select the first remaining playlist
+          const remainingPlaylists = playlists?.filter(p => p.id !== playlistId) || [];
+          if (remainingPlaylists.length > 0) {
+              setSelectedPlaylistId(remainingPlaylists[0].id);
+          } else {
+              setSelectedPlaylistId(null);
+          }
+      } catch (error) {
+          console.error("Error deleting playlist:", error);
+          showError("Failed to delete playlist.");
+          throw error;
+      }
+  }
 
   const value = {
     playlists: playlists || null,
     selectedPlaylistId,
     setSelectedPlaylistId,
     createPlaylist,
+    deletePlaylist,
     
     currentPlaylist,
     currentTrack,

@@ -218,6 +218,23 @@ export const usePlaylistData = (selectedPlaylistId: string | null, currentPlayli
         queryClient.invalidateQueries({ queryKey: ['playlists', userId] });
     }
   });
+  
+  const deletePlaylistMutation = useMutation({
+    mutationFn: async (playlistId: string) => {
+      const { error } = await supabase
+        .from('playlists')
+        .delete()
+        .eq('id', playlistId);
+        
+      if (error) throw error;
+      return playlistId;
+    },
+    onSuccess: () => {
+      // Invalidate both playlists list and tracks for the deleted playlist
+      queryClient.invalidateQueries({ queryKey: ['playlists', userId] });
+      queryClient.invalidateQueries({ queryKey: ['tracks', selectedPlaylistId] });
+    },
+  });
 
   return {
     playlists: playlistsQuery.data || null,
@@ -233,5 +250,6 @@ export const usePlaylistData = (selectedPlaylistId: string | null, currentPlayli
     updateTrackOrderMutation,
     updatePlaylistNameMutation,
     createPlaylistMutation,
+    deletePlaylistMutation,
   };
 };
