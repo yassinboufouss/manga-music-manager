@@ -39,13 +39,17 @@ interface MusicPlayerContextType {
   updateTrackOrder: (tracks: Track[]) => Promise<void>;
   isLoadingData: boolean;
   
-  // New playback controls
+  // Playback controls
   isLooping: boolean;
-  setIsLooping: React.Dispatch<React.SetStateAction<boolean>>; // Fixed type
+  setIsLooping: React.Dispatch<React.SetStateAction<boolean>>;
   isAutoplayEnabled: boolean;
-  setIsAutoplayEnabled: React.Dispatch<React.SetStateAction<boolean>>; // Fixed type
+  setIsAutoplayEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   playNext: () => void;
   playPrevious: () => void;
+  
+  // New: Playback Rate
+  playbackRate: number;
+  setPlaybackRate: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
@@ -59,8 +63,9 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isLooping, setIsLooping] = useState(false); // New state
-  const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(true); // New state
+  const [isLooping, setIsLooping] = useState(false);
+  const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(true);
+  const [playbackRate, setPlaybackRate] = useState(1); // New state: default to 1x speed
   
   // We need a temporary state for currentPlaylist to pass to the hook for mutations
   const [currentPlaylistState, setCurrentPlaylistState] = useState<Playlist | null>(null);
@@ -268,13 +273,17 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
     updateTrackOrder,
     isLoadingData,
     
-    // New playback controls
+    // Playback controls
     isLooping,
     setIsLooping,
     isAutoplayEnabled,
     setIsAutoplayEnabled,
     playNext,
     playPrevious,
+    
+    // New: Playback Rate
+    playbackRate,
+    setPlaybackRate,
   };
   
   if (isError) {

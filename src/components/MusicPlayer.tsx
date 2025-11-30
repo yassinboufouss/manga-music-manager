@@ -9,6 +9,9 @@ import { formatTime } from '@/utils/time';
 import { showSuccess } from '@/utils/toast';
 import { usePlaybackShortcuts } from '@/hooks/use-playback-shortcuts';
 import { Toggle } from '@/components/ui/toggle';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 const MusicPlayer = () => {
   const { 
@@ -22,8 +25,10 @@ const MusicPlayer = () => {
     setIsLooping,
     isAutoplayEnabled,
     setIsAutoplayEnabled,
-    playNext, // Now from context
-    playPrevious, // Now from context
+    playNext,
+    playPrevious,
+    playbackRate, // New
+    setPlaybackRate, // New
   } = useMusicPlayer();
   
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -108,11 +113,19 @@ const MusicPlayer = () => {
           isInitialLoad.current = false;
       }
   }, [currentTrack]);
+  
+  // Effect to update playback rate on the player instance
+  React.useEffect(() => {
+      if (playerRef.current) {
+          playerRef.current.setPlaybackRate(playbackRate);
+      }
+  }, [playbackRate]);
 
 
   const onReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
     playerRef.current.setVolume(volume);
+    playerRef.current.setPlaybackRate(playbackRate); // Set initial rate
     
     // Reset time and get duration when a new track loads
     setCurrentTime(0);
@@ -195,6 +208,10 @@ const MusicPlayer = () => {
   
   const handleAutoplayToggle = () => {
       setIsAutoplayEnabled(prev => !prev);
+  };
+  
+  const handleRateChange = (value: string) => {
+      setPlaybackRate(parseFloat(value));
   };
 
   if (isLoadingData) {
@@ -310,18 +327,36 @@ const MusicPlayer = () => {
         </div>
       </div>
 
-      {/* Volume Control */}
-      <div className="flex items-center w-1/4 justify-end space-x-2 min-w-[150px]">
-        <Button variant="ghost" size="icon" onClick={toggleMute} className="hover:bg-transparent text-foreground hover:text-primary">
-          {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-        </Button>
-        <Slider 
-          value={[isMuted ? 0 : volume]} 
-          onValueChange={handleVolumeChange} 
-          max={100} 
-          step={1} 
-          className="w-[100px] cursor-pointer" 
-        />
+      {/* Volume Control and Playback Rate */}
+      <div className="flex items-center w-1/4 justify-end space-x-4 min-w-[200px]">
+        
+        {/* Playback Rate Selector */}
+        <Select value={playbackRate.toString()} onValueChange={handleRateChange}>
+            <SelectTrigger className="w-[80px] h-8 text-xs">
+                <SelectValue placeholder="1x" />
+            </SelectTrigger>
+            <SelectContent>
+                {PLAYBACK_RATES.map(rate => (
+                    <SelectItem key={rate} value={rate.toString()}>
+                        {rate}x
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+        
+        {/* Volume Control */}
+        <div className="flex items-center space-x-2 min-w-[100px]">
+            <Button variant="ghost" size="icon" onClick={toggleMute} className="hover:bg-transparent text-foreground hover:text-primary">
+              {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            </Button>
+            <Slider 
+              value={[isMuted ? 0 : volume]} 
+              onValueChange={handleVolumeChange} 
+              max={100} 
+              step={1} 
+              className="w-[100px] cursor-pointer" 
+            />
+        </div>
       </div>
     </div>
   );
