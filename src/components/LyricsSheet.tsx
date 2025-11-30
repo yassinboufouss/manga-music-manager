@@ -47,8 +47,17 @@ const LyricsSheet: React.FC = () => {
     }
 
     if (lyricsData?.lyrics) {
+      const isMock = lyricsData.source.includes("Mock Data");
+      
       return (
         <ScrollArea className="h-full p-4">
+          {isMock && (
+              <div className="mb-4 p-3 border border-yellow-500 bg-yellow-500/10 rounded-lg">
+                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
+                      ⚠️ Currently displaying mock lyrics. To enable real lyrics, please configure a lyrics API in the `fetch-lyrics` Edge Function.
+                  </p>
+              </div>
+          )}
           <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground/90">
             {lyricsData.lyrics}
           </div>

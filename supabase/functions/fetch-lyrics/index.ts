@@ -10,7 +10,7 @@ const corsHeaders = {
 };
 
 // NOTE: To implement real lyrics fetching, you would integrate a third-party lyrics API here (e.g., Musixmatch, Genius, etc.)
-// This implementation returns a placeholder response.
+// This implementation returns a placeholder response if no API key is configured.
 
 const MOCK_LYRICS = `(Verse 1)
 The sun goes down, the stars come out
@@ -48,12 +48,36 @@ serve(async (req) => {
       });
     }
     
-    console.log(`Attempting to fetch lyrics for: ${title} by ${artist}`);
-
-    // --- Placeholder Logic ---
-    // In a real application, you would call an external API here.
-    // Example: const lyricsResponse = await fetch('https://lyrics-api.com/search?q=' + encodeURIComponent(title + ' ' + artist));
+    const LYRICS_API_KEY = Deno.env.get('lyrics_api_key');
     
+    if (LYRICS_API_KEY) {
+        // --- REAL API INTEGRATION TEMPLATE ---
+        console.log(`Using real API key to fetch lyrics for: ${title} by ${artist}`);
+        
+        // Replace this block with your actual API call logic
+        // Example using a hypothetical API:
+        /*
+        const searchUrl = `https://api.lyrics.com/search?q=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&apikey=${LYRICS_API_KEY}`;
+        const apiResponse = await fetch(searchUrl);
+        const apiData = await apiResponse.json();
+        
+        if (apiData.lyrics) {
+            return new Response(JSON.stringify({
+                title,
+                artist,
+                lyrics: apiData.lyrics,
+                source: "Real Lyrics API",
+            }), { status: 200, headers: corsHeaders });
+        }
+        */
+        
+        // Fallback to mock data if real API integration is not complete or fails
+        console.warn("Real API key found, but API integration template is commented out. Falling back to mock data.");
+    } else {
+        console.warn("lyrics_api_key secret not set. Returning mock lyrics.");
+    }
+
+    // --- Mock Data Fallback ---
     // Mock delay for demonstration
     await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -61,7 +85,7 @@ serve(async (req) => {
         title,
         artist,
         lyrics: MOCK_LYRICS,
-        source: "Mock Data Source (Integrate a real API here)",
+        source: LYRICS_API_KEY ? "Mock Data (API integration pending)" : "Mock Data (No API Key)",
     };
 
     return new Response(JSON.stringify(lyricsData), {
