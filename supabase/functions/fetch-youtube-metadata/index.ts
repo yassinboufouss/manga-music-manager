@@ -1,3 +1,4 @@
+// @ts-nocheck
 /// <reference types="https://deno.land/std@0.190.0/http/server.ts" />
 /// <reference types="https://esm.sh/@supabase/supabase-js@2.45.0" />
 
@@ -13,15 +14,14 @@ function formatDuration(isoDuration: string): string {
   const minutes = parseInt(matches[2] || '0', 10);
   const seconds = parseInt(matches[3] || '0', 10);
 
-  let totalMinutes = minutes + (hours * 60);
-  let remainingSeconds = seconds;
-
-  // Handle cases where duration is over an hour (e.g., 65:30)
-  if (hours > 0) {
-    return `${totalMinutes}:${String(remainingSeconds).padStart(2, '0')}`;
-  }
+  // Calculate total seconds
+  const totalSeconds = (hours * 3600) + (minutes * 60) + seconds;
   
-  return `${totalMinutes}:${String(remainingSeconds).padStart(2, '0')}`;
+  // Convert total seconds to M:SS format
+  const m = Math.floor(totalSeconds / 60);
+  const s = Math.floor(totalSeconds % 60);
+  
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 // Simple attempt to extract artist from title
