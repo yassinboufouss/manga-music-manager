@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useMusicPlayer, Track } from '@/context/MusicPlayerContext';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import SortableTrackItem from './SortableTrackItem';
 import TrackListItem from './TrackListItem';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
@@ -24,6 +23,11 @@ const TrackList: React.FC<TrackListProps> = ({ searchTerm }) => {
   // Local state for optimistic UI updates during drag
   const [tracks, setTracks] = useState<Track[]>(currentPlaylist?.tracks || []);
   
+  // Ref for the list container (which is inside the scrollable area)
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  // Map to store refs for individual track items
+  const trackRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
   // Sync local state when playlist data changes (after fetch/mutation or playlist switch)
   useEffect(() => {
     // Only update local tracks if the currentPlaylist is loaded and tracks are different
@@ -49,13 +53,6 @@ const TrackList: React.FC<TrackListProps> = ({ searchTerm }) => {
     );
   }, [tracks, normalizedSearchTerm, isSearchActive]);
   
-  // --- Drag and Drop / Scroll Logic ---
-  
-  // Ref for the ScrollArea container
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  // Map to store refs for individual track items
-  const trackRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-
   // Helper function to set refs dynamically
   const setTrackRef = useCallback((id: string, el: HTMLDivElement | null) => {
     if (el) {
@@ -67,7 +64,7 @@ const TrackList: React.FC<TrackListProps> = ({ searchTerm }) => {
 
   // Effect to scroll to the current track when it changes (only if not searching)
   useEffect(() => {
-    if (currentTrack && scrollAreaRef.current && !isSearchActive) {
+    if (currentTrack && !isSearchActive) {
       const trackIdKey = currentTrack.dbId;
       if (trackIdKey) {
         const trackElement = trackRefs.current.get(trackIdKey);
@@ -154,27 +151,25 @@ const TrackList: React.FC<TrackListProps> = ({ searchTerm }) => {
   };
 
   return (
-    <>
+    <div ref={listContainerRef}>
       <h3 className="text-lg font-semibold mb-2 mt-4 text-foreground">
         Tracks ({tracksToDisplay.length})
       </h3>
-      <ScrollArea className="flex-grow h-0" ref={scrollAreaRef as React.RefObject<HTMLDivElement>}>
-        
-        {tracks.length === 0 && !isLoadingData && !isSearchActive && (
-            <p className="text-sm text-muted-foreground p-3">No tracks found. Add one above!</p>
-        )}
-        {isLoadingData && tracks.length === 0 && (
-            <div className="flex items-center justify-center p-3">
-                <Loader2 className="h-4 w-4 animate-spin text-primary mr-2" />
-                <span className="text-sm text-muted-foreground">Loading tracks...</span>
-            </div>
-        )}
-        
-        {/* Render the appropriate list based on search state */}
-        {!isLoadingData && renderTrackList()}
-        
-      </ScrollArea>
-    </>
+      
+      {tracks.length === 0 && !isLoadingData && !isSearchActive && (
+          <p className="text-sm text-muted-foreground p-3">No tracks found. Add one above!</p>
+      )}
+      {isLoadingData && tracks.length === 0 && (
+          <div className="flex items-center justify-center p-3">
+              <Loader2 className="h-4 w-4 animate-spin text-primary mr-2" />
+              <span className="text-sm text-muted-foreground">Loading tracks...</span>
+          </div>
+      )}
+      
+      {/* Render the appropriate list based on search state */}
+      {!isLoadingData && renderTrackList()}
+      
+    </div>
   );
 };
 
