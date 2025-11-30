@@ -83,8 +83,19 @@ Fade out...`;
     
     if (!response.ok) {
         console.error('Genius API HTTP Error:', response.status, data);
+        
+        let errorMessage = `Genius API HTTP Error: ${response.status}.`;
+        
+        if (response.status === 401 || response.status === 403) {
+            errorMessage = "Genius API Authentication Failed. Please check if the 'genius_access_token' secret is valid and has the correct permissions.";
+        } else if (response.status === 429) {
+            errorMessage = "Genius API Rate Limit Exceeded. Please try again later.";
+        } else {
+            errorMessage += " Check logs for details.";
+        }
+        
         return new Response(JSON.stringify({ 
-            error: `Genius API HTTP Error: ${response.status}. Check token and logs.`,
+            error: errorMessage,
             details: data.error || 'Unknown API error'
         }), {
             status: response.status,
