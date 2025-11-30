@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import AddTrackDialog from './AddTrackDialog';
@@ -6,9 +6,11 @@ import ClearPlaylistDialog from './ClearPlaylistDialog';
 import PlaylistSelector from './PlaylistSelector';
 import PlaylistHeaderActions from './PlaylistHeaderActions';
 import TrackList from './TrackList';
+import { Input } from '@/components/ui/input';
 
 const PlaylistSidebar = () => {
   const { currentPlaylist, isLoadingData, selectedPlaylistId } = useMusicPlayer();
+  const [searchTerm, setSearchTerm] = useState('');
   
   if (isLoadingData && !currentPlaylist) {
       return (
@@ -46,9 +48,20 @@ const PlaylistSidebar = () => {
         </div>
         <AddTrackDialog />
       </div>
+      
+      {/* Search Input */}
+      {currentPlaylist && currentPlaylist.tracks.length > 0 && (
+        <div className="mb-4">
+          <Input 
+            placeholder="Search tracks..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+          />
+        </div>
+      )}
 
       {/* Tracks List */}
-      <TrackList />
+      <TrackList searchTerm={searchTerm} />
       
       <div className="mt-4 pt-4 border-t border-border space-y-2">
         <ClearPlaylistDialog />
