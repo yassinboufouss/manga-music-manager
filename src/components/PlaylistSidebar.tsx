@@ -11,6 +11,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { reorderArray } from '@/lib/dnd-utils';
 import RenamePlaylistDialog from './RenamePlaylistDialog';
 import ClearPlaylistDialog from './ClearPlaylistDialog';
+import LogoutButton from './LogoutButton';
 
 const PlaylistSidebar = () => {
   const { currentPlaylist, currentTrack, isLoadingData, updateTrackOrder } = useMusicPlayer();
@@ -141,8 +142,9 @@ const PlaylistSidebar = () => {
         </DndContext>
       </ScrollArea>
       
-      <div className="mt-4 pt-4 border-t border-border">
+      <div className="mt-4 pt-4 border-t border-border space-y-2">
         <ClearPlaylistDialog />
+        <LogoutButton />
       </div>
     </div>
   );
