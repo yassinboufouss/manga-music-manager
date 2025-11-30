@@ -32,7 +32,7 @@ const PlaylistSidebar = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-background text-foreground p-4">
+    <div className="w-full h-full flex flex-col bg-background text-foreground p-4 border-r border-border">
       
       <div className="mb-4">
         <PlaylistSelector />
@@ -60,8 +60,10 @@ const PlaylistSidebar = () => {
         </div>
       )}
 
-      {/* Tracks List */}
-      <TrackList searchTerm={searchTerm} />
+      {/* Tracks List (Scrollable Area) */}
+      <div className="flex-grow overflow-y-auto">
+        <TrackList searchTerm={searchTerm} />
+      </div>
       
       <div className="mt-4 pt-4 border-t border-border space-y-2">
         <ClearPlaylistDialog />
