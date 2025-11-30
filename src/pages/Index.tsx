@@ -1,4 +1,4 @@
-import { MadeWithDyad } from "@/components/made-with-dyad";
+import { AppCredit } from "@/components/AppCredit";
 import { useMusicPlayer } from "@/context/MusicPlayerContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,7 +77,7 @@ const Index = () => {
       </div>
       
       <div className="mt-auto pt-10">
-        <MadeWithDyad />
+        <AppCredit />
       </div>
     </div>
   );
