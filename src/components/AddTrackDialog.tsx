@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Loader2 } from 'lucide-react';
@@ -8,7 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { AddTrackSchema, AddTrackFormValues } from '@/lib/schemas';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
-import { showError } from '@/utils/toast';
+import { showError, showSuccess } from '@/utils/toast';
 import { useYoutubeMetadata } from '@/hooks/use-youtube-metadata';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +42,9 @@ const AddTrackDialog: React.FC = () => {
   const { addTrackToPlaylist } = useMusicPlayer();
   const { data: metadata, isLoading: isFetchingMetadata, error: metadataError, fetchMetadata } = useYoutubeMetadata();
   const [open, setOpen] = useState(false);
+  
+  // Ref to prevent duplicate submissions when metadata is fetched repeatedly due to re-renders
+  const lastProcessedIdRef = useRef<string | null>(null); 
 
   const form = useForm<AddTrackFormValues>({
     resolver: zodResolver(AddTrackSchema),
@@ -66,10 +69,13 @@ const AddTrackDialog: React.FC = () => {
     try {
       await addTrackToPlaylist(trackData);
       
+      // Success: Clear the ref and close
+      lastProcessedIdRef.current = null;
       form.reset();
       setOpen(false);
     } catch (error) {
-      // Error handled in context, but we catch here to prevent dialog closing
+      // Failure: Clear the ref to allow manual retry if the user fixes the input/error
+      lastProcessedIdRef.current = null;
       console.error(error);
     }
   }, [addTrackToPlaylist, form]);
@@ -78,37 +84,54 @@ const AddTrackDialog: React.FC = () => {
   // Effect to fetch metadata when a valid ID is present
   useEffect(() => {
     if (youtubeIdValue && youtubeIdValue.length === 11 && !isFetchingMetadata) {
+      // Clear the processed ref when a new ID is being fetched
+      lastProcessedIdRef.current = null;
       fetchMetadata(youtubeIdValue);
     }
   }, [youtubeIdValue, fetchMetadata, isFetchingMetadata]);
   
   // Effect to populate form and trigger automatic submission when metadata arrives
   useEffect(() => {
-    if (metadata) {
+    // Check if metadata is present AND if the current youtubeId has NOT been processed yet
+    if (metadata && youtubeIdValue && lastProcessedIdRef.current !== youtubeIdValue) {
+      
+      // Set the ref immediately to prevent re-triggering on subsequent renders
+      lastProcessedIdRef.current = youtubeIdValue; 
+      
       // 1. Populate fields
       form.setValue("title", metadata.title, { shouldValidate: true });
       form.setValue("artist", metadata.artist, { shouldValidate: true });
       form.setValue("duration", metadata.duration, { shouldValidate: true });
       
       // 2. Attempt automatic submission
-      // We trigger validation first to ensure all fields are ready and valid
       form.trigger().then(isValid => {
           if (isValid) {
               // Call the submission handler directly, wrapped by RHF's handleSubmit
               form.handleSubmit(onSubmit)();
           } else {
               showError("Fetched metadata failed validation. Please check fields manually.");
+              // If validation fails, clear the ref so the user can fix fields and retry manually
+              lastProcessedIdRef.current = null; 
           }
       });
     }
-  }, [metadata, form, onSubmit]);
+  }, [metadata, form, onSubmit, youtubeIdValue]);
   
   // Effect to show error if metadata fetching fails
   useEffect(() => {
       if (metadataError) {
           showError(`Metadata fetch failed: ${metadataError}`);
+          // If fetch fails, clear the ref to allow retry
+          lastProcessedIdRef.current = null;
       }
   }, [metadataError]);
+  
+  // Effect to reset the processed ID when the dialog closes
+  useEffect(() => {
+      if (!open) {
+          lastProcessedIdRef.current = null;
+      }
+  }, [open]);
 
 
   const handleIdInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
