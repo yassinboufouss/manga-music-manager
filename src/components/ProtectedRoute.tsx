@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/integrations/supabase/auth';
+import Layout from './Layout';
 
 const ProtectedRoute: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -14,7 +15,12 @@ const ProtectedRoute: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  // Render the Layout component around the Outlet for all protected pages
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
 };
 
 export default ProtectedRoute;
