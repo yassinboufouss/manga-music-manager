@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { formatTime } from '@/utils/time';
-import { showSuccess } from '@/utils/toast'; // Import toast utility
-import { usePlaybackShortcuts } from '@/hooks/use-playback-shortcuts'; // Import the new hook
+import { showSuccess } from '@/utils/toast';
+import { usePlaybackShortcuts } from '@/hooks/use-playback-shortcuts';
 
 const MusicPlayer = () => {
-  const { currentTrack, isPlaying, setIsPlaying, currentPlaylist, setCurrentTrack } = useMusicPlayer();
+  const { currentTrack, isPlaying, setIsPlaying, currentPlaylist, setCurrentTrack, isLoadingData } = useMusicPlayer();
   const playerRef = useRef<YouTubePlayer | null>(null);
   const [volume, setVolume] = React.useState(50);
   const [isMuted, setIsMuted] = React.useState(false);
@@ -18,7 +18,7 @@ const MusicPlayer = () => {
   // State for progress
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
-  const intervalRef = useRef<number | null>(null);
+  const intervalRef = useRef<number | null>(intervalRef.current);
   
   // State for loading/buffering
   const [isLoading, setIsLoading] = React.useState(false);
@@ -42,30 +42,36 @@ const MusicPlayer = () => {
 
   const updateTime = useCallback(() => {
     if (playerRef.current) {
-      // FIX: getCurrentTime is synchronous
       const time = playerRef.current.getCurrentTime();
       setCurrentTime(time);
     }
   }, []);
   
   const playNext = useCallback(() => {
-    if (!currentTrack) return;
-    const currentIndex = currentPlaylist.tracks.findIndex(t => t.id === currentTrack.id);
+    if (!currentTrack || !currentPlaylist || currentPlaylist.tracks.length === 0) return;
+    
+    // Use dbId for reliable identification if available, otherwise fall back to YouTube ID
+    const currentId = currentTrack.dbId || currentTrack.id;
+    const currentIndex = currentPlaylist.tracks.findIndex(t => (t.dbId || t.id) === currentId);
+    
     const nextIndex = (currentIndex + 1) % currentPlaylist.tracks.length;
     setCurrentTrack(currentPlaylist.tracks[nextIndex]);
     setIsPlaying(true); 
-  }, [currentTrack, currentPlaylist.tracks, setCurrentTrack, setIsPlaying]);
+  }, [currentTrack, currentPlaylist, setCurrentTrack, setIsPlaying]);
 
   const playPrevious = useCallback(() => {
-    if (!currentTrack) return;
-    const currentIndex = currentPlaylist.tracks.findIndex(t => t.id === currentTrack.id);
+    if (!currentTrack || !currentPlaylist || currentPlaylist.tracks.length === 0) return;
+    
+    const currentId = currentTrack.dbId || currentTrack.id;
+    const currentIndex = currentPlaylist.tracks.findIndex(t => (t.dbId || t.id) === currentId);
+    
     let previousIndex = currentIndex - 1;
     if (previousIndex < 0) {
       previousIndex = currentPlaylist.tracks.length - 1;
     }
     setCurrentTrack(currentPlaylist.tracks[previousIndex]);
     setIsPlaying(true); 
-  }, [currentTrack, currentPlaylist.tracks, setCurrentTrack, setIsPlaying]);
+  }, [currentTrack, currentPlaylist, setCurrentTrack, setIsPlaying]);
 
   const togglePlayPause = useCallback(() => {
     if (!playerRef.current || isLoading) return;
@@ -106,6 +112,7 @@ const MusicPlayer = () => {
   React.useEffect(() => {
       if (currentTrack) {
           setIsLoading(true);
+          // Only show toast if it's not the very first load of the app
           if (!isInitialLoad.current) {
               showSuccess(`Now playing: ${currentTrack.title} by ${currentTrack.artist}`);
           }
@@ -121,7 +128,6 @@ const MusicPlayer = () => {
     // Reset time and get duration when a new track loads
     setCurrentTime(0);
     
-    // FIX: getDuration is synchronous
     const d = playerRef.current.getDuration();
     setDuration(d);
     
@@ -185,10 +191,19 @@ const MusicPlayer = () => {
     }
   };
 
+  if (isLoadingData) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 flex items-center justify-center h-20 z-50">
+        <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+        <p className="text-muted-foreground">Loading playlist...</p>
+      </div>
+    );
+  }
+  
   if (!currentTrack) {
     return (
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 flex items-center justify-center h-20 z-50">
-        <p className="text-muted-foreground">No track selected.</p>
+        <p className="text-muted-foreground">No track selected. Add a track to start playing.</p>
       </div>
     );
   }

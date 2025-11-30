@@ -50,22 +50,22 @@ const AddTrackDialog: React.FC = () => {
     },
   });
 
-  const onSubmit = (data: AddTrackFormValues) => {
+  const onSubmit = async (data: AddTrackFormValues) => {
+    const trackData = {
+      id: data.youtubeId,
+      title: data.title,
+      artist: data.artist,
+      duration: data.duration,
+    };
+    
     try {
-      const newTrack = {
-        id: data.youtubeId,
-        title: data.title,
-        artist: data.artist,
-        duration: data.duration,
-      };
-      
-      addTrackToPlaylist(newTrack);
-      showSuccess(`Track "${data.title}" added to playlist!`);
+      await addTrackToPlaylist(trackData);
       
       form.reset();
       setOpen(false);
     } catch (error) {
-      showError("Failed to add track.");
+      // Error handled in context, but we catch here to prevent dialog closing
+      console.error(error);
     }
   };
   

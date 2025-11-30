@@ -1,11 +1,11 @@
 import React, { useRef, useEffect, useCallback, forwardRef } from 'react';
-import { ListMusic, Play } from 'lucide-react';
+import { ListMusic, Play, Loader2 } from 'lucide-react';
 import { useMusicPlayer, Track } from '@/context/MusicPlayerContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import AddTrackDialog from './AddTrackDialog'; // Import the new component
+import AddTrackDialog from './AddTrackDialog';
 
 interface TrackItemProps {
   track: Track;
@@ -15,7 +15,9 @@ const TrackItem = forwardRef<HTMLDivElement, TrackItemProps>(({ track }, ref) =>
   const { currentTrack, setCurrentTrack, setIsPlaying, isPlaying } = useMusicPlayer();
   const { setIsSidebarOpen } = useSidebar();
   const isMobile = useIsMobile();
-  const isActive = currentTrack?.id === track.id;
+  
+  // Use dbId for comparison if available, otherwise fall back to YouTube ID
+  const isActive = currentTrack?.dbId === track.dbId || (!currentTrack?.dbId && currentTrack?.id === track.id);
 
   const handleTrackClick = () => {
     setCurrentTrack(track);
@@ -58,7 +60,7 @@ const TrackItem = forwardRef<HTMLDivElement, TrackItemProps>(({ track }, ref) =>
 TrackItem.displayName = "TrackItem";
 
 const PlaylistSidebar = () => {
-  const { currentPlaylist, currentTrack } = useMusicPlayer();
+  const { currentPlaylist, currentTrack, isLoadingData } = useMusicPlayer();
   
   // Ref for the ScrollArea container
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -77,17 +79,37 @@ const PlaylistSidebar = () => {
   // Effect to scroll to the current track when it changes
   useEffect(() => {
     if (currentTrack && scrollAreaRef.current) {
-      const trackElement = trackRefs.current.get(currentTrack.id);
+      // Use dbId if available, otherwise fall back to YouTube ID
+      const trackIdKey = currentTrack.dbId || currentTrack.id;
+      const trackElement = trackRefs.current.get(trackIdKey);
       
       if (trackElement) {
-        // Use scrollIntoView to ensure the active track is visible
         trackElement.scrollIntoView({
             behavior: 'smooth',
-            block: 'nearest', // Only scrolls if the element is not fully visible
+            block: 'nearest',
         });
       }
     }
   }, [currentTrack]);
+  
+  if (isLoadingData) {
+      return (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-background text-foreground p-4 border-r border-border">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p className="text-sm mt-2 text-muted-foreground">Loading...</p>
+          </div>
+      );
+  }
+  
+  if (!currentPlaylist) {
+      // Should not happen if AuthProvider is working, but good fallback
+      return (
+          <div className="w-full h-full flex flex-col bg-background text-foreground p-4 border-r border-border">
+              <h2 className="text-2xl font-bold mb-6 text-primary">Dyad Music</h2>
+              <p className="text-sm text-muted-foreground">Please log in to view your playlist.</p>
+          </div>
+      );
+  }
 
 
   return (
@@ -105,17 +127,20 @@ const PlaylistSidebar = () => {
         <AddTrackDialog />
       </div>
 
-      <h3 className="text-lg font-semibold mb-2 mt-4 text-foreground">Tracks</h3>
+      <h3 className="text-lg font-semibold mb-2 mt-4 text-foreground">Tracks ({currentPlaylist.tracks.length})</h3>
 
       <ScrollArea className="flex-grow h-0" ref={scrollAreaRef as React.RefObject<HTMLDivElement>}>
         <div className="space-y-1 pr-4">
           {currentPlaylist.tracks.map((track) => (
             <TrackItem 
-              key={track.id} 
+              key={track.dbId || track.id} // Use dbId as primary key
               track={track} 
-              ref={(el) => setTrackRef(track.id, el)}
+              ref={(el) => setTrackRef(track.dbId || track.id, el)}
             />
           ))}
+          {currentPlaylist.tracks.length === 0 && (
+              <p className="text-sm text-muted-foreground p-3">No tracks found. Add one above!</p>
+          )}
         </div>
       </ScrollArea>
     </div>

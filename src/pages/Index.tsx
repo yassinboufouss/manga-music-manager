@@ -3,24 +3,35 @@ import Layout from "@/components/Layout";
 import { useMusicPlayer } from "@/context/MusicPlayerContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
+import { Play, Loader2 } from "lucide-react";
 
 const Index = () => {
-  const { currentTrack, currentPlaylist, setCurrentTrack, setIsPlaying } = useMusicPlayer();
+  const { currentTrack, currentPlaylist, setCurrentTrack, setIsPlaying, isLoadingData } = useMusicPlayer();
 
   const handlePlayFirstTrack = () => {
-    if (currentPlaylist.tracks.length > 0) {
+    if (currentPlaylist && currentPlaylist.tracks.length > 0) {
       setCurrentTrack(currentPlaylist.tracks[0]);
       setIsPlaying(true);
     }
   };
+  
+  if (isLoadingData) {
+      return (
+          <Layout>
+              <div className="p-8 flex items-center justify-center h-[calc(100vh-80px)]">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+                  <p className="text-lg text-muted-foreground">Loading application data...</p>
+              </div>
+          </Layout>
+      );
+  }
 
   return (
     <Layout>
       <div className="p-8 space-y-8">
         <h1 className="text-4xl font-bold">Welcome to Dyad Music Player</h1>
         <p className="text-lg text-muted-foreground">
-          Select a track from the sidebar to start listening to the mock playlist.
+          Select a track from the sidebar or add a new one to start listening to your playlist.
         </p>
 
         <Card className="w-full max-w-3xl">
@@ -43,10 +54,17 @@ const Index = () => {
               </div>
             ) : (
               <div className="text-center p-4">
-                <p className="mb-4">No track loaded.</p>
-                <Button onClick={handlePlayFirstTrack}>
-                  <Play className="w-4 h-4 mr-2" /> Start Playlist
-                </Button>
+                <p className="mb-4">
+                  {currentPlaylist && currentPlaylist.tracks.length > 0 
+                    ? "No track loaded." 
+                    : "Your playlist is empty. Add a track using the sidebar."
+                  }
+                </p>
+                {currentPlaylist && currentPlaylist.tracks.length > 0 && (
+                    <Button onClick={handlePlayFirstTrack}>
+                      <Play className="w-4 h-4 mr-2" /> Start Playlist
+                    </Button>
+                )}
               </div>
             )}
           </CardContent>

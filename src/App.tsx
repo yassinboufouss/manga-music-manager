@@ -5,8 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
 import { MusicPlayerProvider } from "./context/MusicPlayerContext";
 import { SidebarProvider } from "./context/SidebarContext";
+import { AuthProvider } from "./integrations/supabase/auth";
 
 const queryClient = new QueryClient();
 
@@ -15,19 +18,27 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <MusicPlayerProvider>
-        <SidebarProvider>
-          <div className="dark min-h-screen">
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </div>
-        </SidebarProvider>
-      </MusicPlayerProvider>
+      <AuthProvider>
+        <MusicPlayerProvider>
+          <SidebarProvider>
+            <div className="dark min-h-screen">
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  
+                  {/* Protected Routes */}
+                  <Route element={<ProtectedRoute />}>
+                    <Route path="/" element={<Index />} />
+                  </Route>
+                  
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </div>
+          </SidebarProvider>
+        </MusicPlayerProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
