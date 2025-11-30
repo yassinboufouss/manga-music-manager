@@ -1,6 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import YouTube, { YouTubePlayer } from 'react-youtube';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, Repeat, ListMusic } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, Repeat, ListMusic, Youtube } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -330,6 +330,24 @@ const MusicPlayer = () => {
 
       {/* Volume Control, Playback Rate, and Lyrics (Right) */}
       <div className="flex items-center w-1/3 sm:w-1/4 justify-end space-x-2 sm:space-x-4 min-w-[100px] max-w-[30%] sm:max-w-none">
+        
+        {/* YouTube Link Button (New) */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 sm:h-10 sm:w-10 text-foreground hover:text-primary"
+          disabled={!currentTrack}
+          aria-label="Open YouTube Video"
+          asChild
+        >
+          <a 
+            href={`https://www.youtube.com/watch?v=${currentTrack.id}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+          >
+            <Youtube className="h-5 w-5" />
+          </a>
+        </Button>
         
         {/* Lyrics Button (Visible on all screens) */}
         <LyricsSheet />
