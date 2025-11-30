@@ -1,4 +1,6 @@
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+// @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 // Utility to format duration from ISO 8601 (PT#M#S) to M:SS
@@ -55,10 +57,11 @@ serve(async (req) => {
       });
     }
 
-    // Fetch API Key from Supabase Secrets
-    const YOUTUBE_API_KEY = Deno.env.get('YOUTUBE_API_KEY');
+    // Fetch API Key from Supabase Secrets using the correct lowercase name
+    // @ts-ignore
+    const YOUTUBE_API_KEY = Deno.env.get('youtube_api_key');
     if (!YOUTUBE_API_KEY) {
-        console.error("YOUTUBE_API_KEY secret not set.");
+        console.error("youtube_api_key secret not set.");
         return new Response(JSON.stringify({ error: 'Server configuration error: YouTube API Key missing.' }), {
             status: 500,
             headers: corsHeaders,
