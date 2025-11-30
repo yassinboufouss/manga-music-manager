@@ -1,6 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import YouTube, { YouTubePlayer } from 'react-youtube';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, Repeat, Repeat1, ListMusic } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, Repeat, ListMusic } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -10,6 +10,7 @@ import { showSuccess } from '@/utils/toast';
 import { usePlaybackShortcuts } from '@/hooks/use-playback-shortcuts';
 import { Toggle } from '@/components/ui/toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import LyricsSheet from './LyricsSheet'; // Import LyricsSheet
 
 const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
@@ -93,7 +94,7 @@ const MusicPlayer = () => {
         window.clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
-    }
+    };
     // Cleanup on unmount or dependency change
     return () => {
       if (intervalRef.current !== null) {
@@ -232,7 +233,7 @@ const MusicPlayer = () => {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 flex items-center justify-between h-20 z-50 px-6">
+    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 flex items-center justify-between h-20 z-50 sm:px-6">
       
       {/* Hidden YouTube Player */}
       <div className={cn("absolute opacity-0 pointer-events-none")}>
@@ -246,66 +247,66 @@ const MusicPlayer = () => {
         />
       </div>
 
-      {/* Track Info */}
-      <div className="flex items-center w-1/4 min-w-[200px]">
+      {/* Track Info (Left) */}
+      <div className="flex items-center w-1/3 sm:w-1/4 min-w-[150px] max-w-[30%] sm:max-w-none">
         <img 
           src={`https://img.youtube.com/vi/${currentTrack.id}/mqdefault.jpg`} 
           alt={currentTrack.title} 
-          className="w-12 h-12 rounded mr-3 object-cover"
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded mr-2 sm:mr-3 object-cover flex-shrink-0"
         />
         <div className='overflow-hidden'>
-          <p className="text-sm font-medium truncate">{currentTrack.title}</p>
-          <p className="text-xs text-muted-foreground truncate">{currentTrack.artist}</p>
+          <p className="text-xs sm:text-sm font-medium truncate">{currentTrack.title}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{currentTrack.artist}</p>
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col items-center w-1/2 max-w-lg">
-        <div className="flex space-x-4 mb-1 items-center">
+      {/* Controls and Progress (Center) */}
+      <div className="flex flex-col items-center w-1/3 sm:w-1/2 max-w-xs sm:max-w-lg mx-2">
+        <div className="flex space-x-2 sm:space-x-4 mb-1 items-center">
           
-          {/* Loop Toggle */}
+          {/* Loop Toggle (Hidden on small mobile) */}
           <Toggle 
             pressed={isLooping} 
             onPressedChange={handleLoopToggle} 
             variant="outline" 
             size="sm"
-            className={cn("h-8 w-8", isLooping ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground hover:bg-secondary")}
+            className={cn("h-7 w-7 sm:h-8 sm:w-8 hidden sm:flex", isLooping ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground hover:bg-secondary")}
             aria-label="Toggle loop"
           >
             <Repeat className="h-4 w-4" />
           </Toggle>
           
-          <Button variant="ghost" size="icon" onClick={playPrevious} className="hover:bg-transparent text-foreground hover:text-primary">
-            <SkipBack className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={playPrevious} className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-transparent text-foreground hover:text-primary">
+            <SkipBack className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           
           <Button 
             variant="secondary" 
             size="icon" 
-            className="rounded-full h-10 w-10 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50" 
+            className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50" 
             onClick={togglePlayPause}
             disabled={isLoading}
           >
             {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
             ) : isPlaying ? (
-                <Pause className="h-5 w-5 fill-current" />
+                <Pause className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
             ) : (
-                <Play className="h-5 w-5 fill-current" />
+                <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
             )}
           </Button>
           
-          <Button variant="ghost" size="icon" onClick={playNext} className="hover:bg-transparent text-foreground hover:text-primary">
-            <SkipForward className="h-5 w-5" />
+          <Button variant="ghost" size="icon" onClick={playNext} className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-transparent text-foreground hover:text-primary">
+            <SkipForward className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
           
-          {/* Autoplay Toggle */}
+          {/* Autoplay Toggle (Hidden on small mobile) */}
           <Toggle 
             pressed={isAutoplayEnabled} 
             onPressedChange={handleAutoplayToggle} 
             variant="outline" 
             size="sm"
-            className={cn("h-8 w-8", isAutoplayEnabled ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground hover:bg-secondary")}
+            className={cn("h-7 w-7 sm:h-8 sm:w-8 hidden sm:flex", isAutoplayEnabled ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground hover:bg-secondary")}
             aria-label="Toggle autoplay"
           >
             <ListMusic className="h-4 w-4" />
@@ -313,7 +314,7 @@ const MusicPlayer = () => {
           
         </div>
         {/* Progress Bar */}
-        <div className="w-full flex items-center space-x-2 text-xs text-muted-foreground">
+        <div className="w-full flex items-center space-x-1 sm:space-x-2 text-[10px] sm:text-xs text-muted-foreground">
           <span>{formatTime(currentTime)}</span>
           <Slider 
             value={[currentTime]} 
@@ -323,16 +324,19 @@ const MusicPlayer = () => {
             className="w-full cursor-pointer" 
             disabled={duration === 0 || isLoading}
           />
-          <span>{formatTime(duration)}</span>
+          <span className="hidden sm:inline">{formatTime(duration)}</span>
         </div>
       </div>
 
-      {/* Volume Control and Playback Rate */}
-      <div className="flex items-center w-1/4 justify-end space-x-4 min-w-[200px]">
+      {/* Volume Control, Playback Rate, and Lyrics (Right) */}
+      <div className="flex items-center w-1/3 sm:w-1/4 justify-end space-x-2 sm:space-x-4 min-w-[100px] max-w-[30%] sm:max-w-none">
         
-        {/* Playback Rate Selector */}
+        {/* Lyrics Button (Visible on all screens) */}
+        <LyricsSheet />
+        
+        {/* Playback Rate Selector (Hidden on mobile) */}
         <Select value={playbackRate.toString()} onValueChange={handleRateChange}>
-            <SelectTrigger className="w-[80px] h-8 text-xs">
+            <SelectTrigger className="w-[60px] sm:w-[80px] h-7 sm:h-8 text-[10px] sm:text-xs hidden sm:flex">
                 <SelectValue placeholder="1x" />
             </SelectTrigger>
             <SelectContent>
@@ -344,10 +348,10 @@ const MusicPlayer = () => {
             </SelectContent>
         </Select>
         
-        {/* Volume Control */}
-        <div className="flex items-center space-x-2 min-w-[100px]">
-            <Button variant="ghost" size="icon" onClick={toggleMute} className="hover:bg-transparent text-foreground hover:text-primary">
-              {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        {/* Volume Control (Hidden on mobile) */}
+        <div className="items-center space-x-2 min-w-[100px] hidden sm:flex">
+            <Button variant="ghost" size="icon" onClick={toggleMute} className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-transparent text-foreground hover:text-primary">
+              {isMuted || volume === 0 ? <VolumeX className="h-4 w-4 sm:h-5 sm:w-5" /> : <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />}
             </Button>
             <Slider 
               value={[isMuted ? 0 : volume]} 

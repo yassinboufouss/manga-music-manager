@@ -20,7 +20,7 @@ const Index = () => {
   
   if (isLoadingData) {
       return (
-          <div className={cn("p-8 flex items-center justify-center", mainContentHeightClass)}>
+          <div className={cn("p-4 sm:p-8 flex items-center justify-center", mainContentHeightClass)}>
               <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
               <p className="text-lg text-muted-foreground">Loading application data...</p>
           </div>
@@ -28,20 +28,20 @@ const Index = () => {
   }
 
   return (
-    <div className={cn("flex flex-col items-center justify-center p-8", mainContentHeightClass)}>
+    <div className={cn("flex flex-col items-center justify-center p-4 sm:p-8", mainContentHeightClass)}>
       
       <div className="w-full max-w-4xl text-center space-y-10">
         
         <div className="space-y-2">
-            <h1 className="text-5xl font-extrabold tracking-tight">Manga Music Player</h1>
-            <p className="text-xl text-muted-foreground">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">Manga Music Player</h1>
+            <p className="text-base sm:text-xl text-muted-foreground">
               Your personalized, self-hosted YouTube music collection.
             </p>
         </div>
 
-        <Card className="w-full p-6 bg-card/50 backdrop-blur-sm border-primary/20 shadow-2xl">
+        <Card className="w-full p-4 sm:p-6 bg-card/50 backdrop-blur-sm border-primary/20 shadow-2xl">
           <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold text-primary">Now Playing</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl font-bold text-primary">Now Playing</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center space-y-6">
             {currentTrack ? (
@@ -52,14 +52,14 @@ const Index = () => {
                   className="w-full max-w-sm aspect-video rounded-xl shadow-lg object-cover transition-transform duration-300 hover:scale-[1.02]"
                 />
                 <div className="text-center space-y-1">
-                  <p className="text-3xl font-bold tracking-tight">{currentTrack.title}</p>
-                  <p className="text-lg text-muted-foreground">{currentTrack.artist}</p>
-                  <p className="text-sm text-muted-foreground pt-2">Duration: {currentTrack.duration}</p>
+                  <p className="text-xl sm:text-3xl font-bold tracking-tight">{currentTrack.title}</p>
+                  <p className="text-sm sm:text-lg text-muted-foreground">{currentTrack.artist}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground pt-2">Duration: {currentTrack.duration}</p>
                 </div>
               </div>
             ) : (
-              <div className="text-center p-8 border border-dashed border-border rounded-lg w-full">
-                <p className="mb-4 text-lg text-muted-foreground">
+              <div className="text-center p-4 sm:p-8 border border-dashed border-border rounded-lg w-full">
+                <p className="mb-4 text-base sm:text-lg text-muted-foreground">
                   {currentPlaylist && currentPlaylist.tracks.length > 0 
                     ? `Playlist "${currentPlaylist.name}" is loaded but no track is playing.` 
                     : "Your playlist is empty. Add a track using the sidebar."
