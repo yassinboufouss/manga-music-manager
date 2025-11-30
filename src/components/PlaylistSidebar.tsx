@@ -9,6 +9,7 @@ import SortableTrackItem from './SortableTrackItem';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { reorderArray } from '@/lib/dnd-utils';
+import RenamePlaylistDialog from './RenamePlaylistDialog';
 
 const PlaylistSidebar = () => {
   const { currentPlaylist, currentTrack, isLoadingData, updateTrackOrder } = useMusicPlayer();
@@ -102,8 +103,9 @@ const PlaylistSidebar = () => {
       
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-2 text-foreground">Playlists</h3>
-        <div className="p-3 rounded-lg bg-secondary text-secondary-foreground font-medium">
-            {currentPlaylist.name}
+        <div className="flex items-center p-3 rounded-lg bg-secondary text-secondary-foreground font-medium">
+            <span className="flex-1 truncate">{currentPlaylist.name}</span>
+            <RenamePlaylistDialog />
         </div>
       </div>
       

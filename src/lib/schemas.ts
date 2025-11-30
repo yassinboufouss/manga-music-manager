@@ -20,3 +20,13 @@ export const AddTrackSchema = z.object({
 });
 
 export type AddTrackFormValues = z.infer<typeof AddTrackSchema>;
+
+export const RenamePlaylistSchema = z.object({
+  name: z.string().min(1, {
+    message: "Playlist name cannot be empty.",
+  }).max(100, {
+    message: "Playlist name is too long.",
+  }),
+});
+
+export type RenamePlaylistFormValues = z.infer<typeof RenamePlaylistSchema>;

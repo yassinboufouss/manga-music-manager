@@ -169,11 +169,29 @@ export const usePlaylistData = () => {
       queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
     },
   });
+  
+  const updatePlaylistNameMutation = useMutation({
+    mutationFn: async ({ playlistId, newName }: { playlistId: string; newName: string }) => {
+      const { data, error } = await supabase
+        .from('playlists')
+        .update({ name: newName })
+        .eq('id', playlistId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
+    },
+  });
 
   return {
     playlistQuery,
     addTrackMutation,
     deleteTrackMutation,
     updateTrackOrderMutation,
+    updatePlaylistNameMutation,
   };
 };
