@@ -72,9 +72,20 @@ serve(async (req) => {
 
     const response = await fetch(youtubeApiUrl);
     const data = await response.json();
+    
+    if (!response.ok) {
+        console.error('YouTube API HTTP Error:', response.status, data);
+        return new Response(JSON.stringify({ 
+            error: `YouTube API HTTP Error: ${response.status}. Check logs for details.`,
+            details: data.error || 'Unknown API error'
+        }), {
+            status: response.status,
+            headers: corsHeaders,
+        });
+    }
 
     if (data.error) {
-        console.error('YouTube API Error:', data.error);
+        console.error('YouTube API Error (in response body):', data.error);
         return new Response(JSON.stringify({ error: `YouTube API Error: ${data.error.message || 'Check API Key and quotas.'}` }), {
             status: 400,
             headers: corsHeaders,
@@ -103,7 +114,7 @@ serve(async (req) => {
       });
     }
   } catch (error) {
-    console.error('Edge Function Error:', error);
+    console.error('Edge Function Runtime Error:', error);
     return new Response(JSON.stringify({ error: 'Internal server error.' }), {
       status: 500,
       headers: corsHeaders,
