@@ -23,7 +23,7 @@ const Header: React.FC = () => {
       
       <div className="flex items-center space-x-4">
         {isMobile && (
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle Sidebar">
+          <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle Sidebar" className="text-white">
             <Menu className="h-5 w-5" />
           </Button>
         )}
