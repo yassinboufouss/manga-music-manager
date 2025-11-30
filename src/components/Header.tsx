@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Shield } from 'lucide-react';
+import { Menu, Shield, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -53,6 +53,14 @@ const Header: React.FC = () => {
               </p>
             </div>
           </DropdownMenuLabel>
+          
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/profile" className="flex items-center w-full">
+              <User className="mr-2 h-4 w-4" />
+              Profile Settings
+            </Link>
+          </DropdownMenuItem>
           
           {isAdmin && (
             <>

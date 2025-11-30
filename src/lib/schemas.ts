@@ -30,3 +30,10 @@ export const RenamePlaylistSchema = z.object({
 });
 
 export type RenamePlaylistFormValues = z.infer<typeof RenamePlaylistSchema>;
+
+export const ProfileSchema = z.object({
+  first_name: z.string().max(50, "First name is too long.").optional().nullable(),
+  last_name: z.string().max(50, "Last name is too long.").optional().nullable(),
+});
+
+export type ProfileFormValues = z.infer<typeof ProfileSchema>;

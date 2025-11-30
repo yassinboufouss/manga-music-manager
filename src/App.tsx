@@ -12,6 +12,7 @@ import { SidebarProvider } from "./context/SidebarContext";
 import { AuthProvider } from "./integrations/supabase/auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import BannedPage from "./pages/BannedPage";
+import ProfilePage from "./pages/ProfilePage"; // Import new page
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
                   <Route element={<ProtectedRoute />}>
                     <Route path="/" element={<Index />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/profile" element={<ProfilePage />} /> {/* New Route */}
                   </Route>
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
