@@ -3,6 +3,7 @@ import { ThemeSupa } from '@supabase/auth-ui-shared';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/integrations/supabase/auth';
 import { Navigate } from 'react-router-dom';
+import { Music } from 'lucide-react';
 
 const Login = () => {
   const { user, isLoading } = useAuth();
@@ -14,8 +15,12 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-center text-foreground">Sign In to Dyad Music</h1>
+      <div className="w-full max-w-sm p-8 space-y-8 bg-card rounded-xl shadow-2xl border border-border">
+        <div className="flex flex-col items-center space-y-2">
+          <Music className="h-8 w-8 text-primary" />
+          <h1 className="text-3xl font-bold text-center text-foreground">Welcome to Dyad Music</h1>
+          <p className="text-sm text-muted-foreground">Sign in or create an account to continue.</p>
+        </div>
         <Auth
           supabaseClient={supabase}
           providers={[]}
