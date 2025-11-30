@@ -54,7 +54,7 @@ const LyricsSheet: React.FC = () => {
           {isMock && (
               <div className="mb-4 p-3 border border-yellow-500 bg-yellow-500/10 rounded-lg">
                   <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-                      ⚠️ Currently displaying mock lyrics. To enable real lyrics, please configure a lyrics API in the `fetch-lyrics` Edge Function.
+                      ⚠️ Currently displaying mock lyrics. Please set the `genius_access_token` secret to enable Genius search.
                   </p>
               </div>
           )}

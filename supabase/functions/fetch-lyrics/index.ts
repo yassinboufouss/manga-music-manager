@@ -9,10 +9,29 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 };
 
-// NOTE: To implement real lyrics fetching, you would integrate a third-party lyrics API here (e.g., Musixmatch, Genius, etc.)
-// This implementation returns a placeholder response if no API key is configured.
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
-const MOCK_LYRICS = `(Verse 1)
+  try {
+    const { title, artist } = await req.json();
+
+    if (!title || !artist) {
+      return new Response(JSON.stringify({ error: 'Missing title or artist.' }), {
+        status: 400,
+        headers: corsHeaders,
+      });
+    }
+    
+    const GENIUS_ACCESS_TOKEN = Deno.env.get('genius_access_token');
+    const searchQuery = `${title} ${artist}`;
+    
+    if (!GENIUS_ACCESS_TOKEN) {
+        console.warn("genius_access_token secret not set. Returning mock lyrics.");
+        
+        // --- Mock Data Fallback ---
+        const MOCK_LYRICS = `(Verse 1)
 The sun goes down, the stars come out
 And all that counts is here and now
 A melody starts to play
@@ -32,66 +51,75 @@ A song for me, a song for you.
 
 (Outro)
 Fade out...`;
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const { title, artist } = await req.json();
-
-    if (!title || !artist) {
-      return new Response(JSON.stringify({ error: 'Missing title or artist.' }), {
-        status: 400,
-        headers: corsHeaders,
-      });
-    }
-    
-    const LYRICS_API_KEY = Deno.env.get('lyrics_api_key');
-    
-    if (LYRICS_API_KEY) {
-        // --- REAL API INTEGRATION TEMPLATE ---
-        console.log(`Using real API key to fetch lyrics for: ${title} by ${artist}`);
         
-        // Replace this block with your actual API call logic
-        // Example using a hypothetical API:
-        /*
-        const searchUrl = `https://api.lyrics.com/search?q=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}&apikey=${LYRICS_API_KEY}`;
-        const apiResponse = await fetch(searchUrl);
-        const apiData = await apiResponse.json();
-        
-        if (apiData.lyrics) {
-            return new Response(JSON.stringify({
-                title,
-                artist,
-                lyrics: apiData.lyrics,
-                source: "Real Lyrics API",
-            }), { status: 200, headers: corsHeaders });
-        }
-        */
-        
-        // Fallback to mock data if real API integration is not complete or fails
-        console.warn("Real API key found, but API integration template is commented out. Falling back to mock data.");
-    } else {
-        console.warn("lyrics_api_key secret not set. Returning mock lyrics.");
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const lyricsData = {
+            title,
+            artist,
+            lyrics: MOCK_LYRICS,
+            source: "Mock Data (No Genius Access Token)",
+        };
+
+        return new Response(JSON.stringify(lyricsData), {
+          status: 200,
+          headers: corsHeaders,
+        });
     }
 
-    // --- Mock Data Fallback ---
-    // Mock delay for demonstration
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const lyricsData = {
-        title,
-        artist,
-        lyrics: MOCK_LYRICS,
-        source: LYRICS_API_KEY ? "Mock Data (API integration pending)" : "Mock Data (No API Key)",
-    };
-
-    return new Response(JSON.stringify(lyricsData), {
-      status: 200,
-      headers: corsHeaders,
+    // --- Genius API Search Integration ---
+    console.log(`Searching Genius for: ${searchQuery}`);
+    
+    const geniusApiUrl = `https://api.genius.com/search?q=${encodeURIComponent(searchQuery)}`;
+    
+    const response = await fetch(geniusApiUrl, {
+        headers: {
+            'Authorization': `Bearer ${GENIUS_ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+        },
     });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+        console.error('Genius API HTTP Error:', response.status, data);
+        return new Response(JSON.stringify({ 
+            error: `Genius API HTTP Error: ${response.status}. Check token and logs.`,
+            details: data.error || 'Unknown API error'
+        }), {
+            status: response.status,
+            headers: corsHeaders,
+        });
+    }
+
+    const firstHit = data.response.hits?.[0]?.result;
+    
+    if (firstHit) {
+        // Genius API does not provide lyrics directly in the search result.
+        // It provides the URL to the song page (firstHit.url).
+        // Fetching lyrics requires scraping that URL, which is complex and unreliable in an Edge Function.
+        
+        const lyricsData = {
+            title: firstHit.title,
+            artist: firstHit.artist_names,
+            lyrics: `Lyrics found on Genius!
+Song ID: ${firstHit.id}
+URL: ${firstHit.url}
+
+Note: Direct lyrics fetching requires a more complex setup (e.g., a dedicated scraping service or a higher-tier API key). Please visit the URL above to view the lyrics.`,
+            source: `Genius Search API (Song Found)`,
+        };
+
+        return new Response(JSON.stringify(lyricsData), {
+            status: 200,
+            headers: corsHeaders,
+        });
+    } else {
+        return new Response(JSON.stringify({ error: `No lyrics found on Genius for "${searchQuery}".` }), {
+            status: 404,
+            headers: corsHeaders,
+        });
+    }
 
   } catch (error) {
     console.error('Edge Function Runtime Error:', error);
