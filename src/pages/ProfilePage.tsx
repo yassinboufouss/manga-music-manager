@@ -11,7 +11,7 @@ const ProfilePage: React.FC = () => {
     <div className={cn("p-8 flex justify-center", mainContentHeightClass)}>
       <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle className="text-2xl">User Profile</CardTitle>
+          <CardTitle className="text-2xl text-white">User Profile</CardTitle>
           <CardDescription>Manage your personal information.</CardDescription>
         </CardHeader>
         <CardContent>

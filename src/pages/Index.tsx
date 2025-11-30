@@ -33,7 +33,7 @@ const Index = () => {
       <div className="w-full max-w-4xl text-center space-y-10">
         
         <div className="space-y-2">
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">Manga Music Player</h1>
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">Manga Music Player</h1>
             <p className="text-base sm:text-xl text-muted-foreground">
               Your personalized, self-hosted YouTube music collection.
             </p>
@@ -41,7 +41,7 @@ const Index = () => {
 
         <Card className="w-full p-4 sm:p-6 bg-card/50 backdrop-blur-sm border-primary/20 shadow-2xl">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl sm:text-2xl font-bold text-primary">Now Playing</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl font-bold text-white">Now Playing</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center space-y-6">
             {currentTrack ? (

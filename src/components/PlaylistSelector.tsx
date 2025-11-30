@@ -38,7 +38,7 @@ const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ searchTerm }) => {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-foreground">Playlists</h3>
+      <h3 className="text-lg font-semibold text-white">Playlists</h3>
       
       <ScrollArea className="h-[150px] pr-4">
         <div className="space-y-1">

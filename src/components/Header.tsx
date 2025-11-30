@@ -29,7 +29,7 @@ const Header: React.FC = () => {
         )}
         <div className="flex items-center space-x-2">
           <img src="/logo.png" alt="Manga Music Logo" className="h-8 w-8 rounded-full" />
-          <h1 className="text-xl font-semibold text-foreground">Manga Music</h1>
+          <h1 className="text-xl font-semibold text-white">Manga Music</h1>
         </div>
       </div>
 

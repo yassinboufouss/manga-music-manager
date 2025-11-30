@@ -152,7 +152,7 @@ const TrackList: React.FC<TrackListProps> = ({ searchTerm }) => {
 
   return (
     <div ref={listContainerRef}>
-      <h3 className="text-lg font-semibold mb-2 mt-4 text-foreground">
+      <h3 className="text-lg font-semibold mb-2 mt-4 text-white">
         Tracks ({tracksToDisplay.length})
       </h3>
       

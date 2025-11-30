@@ -47,7 +47,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6 text-white">Admin Dashboard</h1>
       
       <Alert className="max-w-4xl mb-8">
         <Terminal className="h-4 w-4" />
@@ -57,7 +57,7 @@ const AdminDashboard: React.FC = () => {
         </AlertDescription>
       </Alert>
       
-      <h2 className="text-2xl font-semibold mb-4">User Profiles</h2>
+      <h2 className="text-2xl font-semibold mb-4 text-white">User Profiles</h2>
       
       {/* Search Input */}
       <div className="mb-6 max-w-4xl">

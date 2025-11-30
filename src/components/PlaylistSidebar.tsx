@@ -50,7 +50,7 @@ const PlaylistSidebar = () => {
       {/* Current Playlist Info and Actions */}
       <div className="mb-4 pt-4 border-t border-border">
         <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold text-foreground truncate">
+            <h3 className="text-lg font-semibold text-white truncate">
                 {currentPlaylist?.name || "Loading Playlist..."}
             </h3>
             {currentPlaylist && <PlaylistHeaderActions />}
