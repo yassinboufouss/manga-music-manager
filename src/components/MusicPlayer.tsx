@@ -1,16 +1,22 @@
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import YouTube, { YouTubePlayer } from 'react-youtube';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { formatTime } from '@/utils/time';
 
 const MusicPlayer = () => {
   const { currentTrack, isPlaying, setIsPlaying, currentPlaylist, setCurrentTrack } = useMusicPlayer();
   const playerRef = useRef<YouTubePlayer | null>(null);
   const [volume, setVolume] = React.useState(50);
   const [isMuted, setIsMuted] = React.useState(false);
+  
+  // State for progress
+  const [currentTime, setCurrentTime] = React.useState(0);
+  const [duration, setDuration] = React.useState(0);
+  const intervalRef = useRef<number | null>(null);
 
   const opts = {
     height: '0', // Hide the video player
@@ -26,9 +32,43 @@ const MusicPlayer = () => {
     },
   };
 
+  const updateTime = useCallback(() => {
+    if (playerRef.current) {
+      playerRef.current.getCurrentTime().then((time: number) => {
+        setCurrentTime(time);
+      });
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (isPlaying) {
+      // Start interval to update time every second
+      intervalRef.current = window.setInterval(updateTime, 1000);
+    } else {
+      // Clear interval when paused
+      if (intervalRef.current !== null) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+    // Cleanup on unmount or dependency change
+    return () => {
+      if (intervalRef.current !== null) {
+        window.clearInterval(intervalRef.current);
+      }
+    };
+  }, [isPlaying, updateTime]);
+
+
   const onReady = (event: { target: YouTubePlayer }) => {
     playerRef.current = event.target;
     playerRef.current.setVolume(volume);
+    
+    // Reset time and get duration when a new track loads
+    setCurrentTime(0);
+    playerRef.current.getDuration().then((d: number) => {
+        setDuration(d);
+    });
     
     // If we are supposed to be playing, start playback immediately upon ready
     if (isPlaying) {
@@ -105,6 +145,14 @@ const MusicPlayer = () => {
     setIsPlaying(true); 
   };
   
+  const handleSeek = (value: number[]) => {
+    const seekTime = value[0];
+    setCurrentTime(seekTime); // Optimistic update
+    if (playerRef.current) {
+      playerRef.current.seekTo(seekTime, true);
+    }
+  };
+
   if (!currentTrack) {
     return (
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 flex items-center justify-center h-20 z-50">
@@ -154,11 +202,18 @@ const MusicPlayer = () => {
             <SkipForward className="h-5 w-5" />
           </Button>
         </div>
-        {/* Simple Progress Bar Placeholder */}
+        {/* Progress Bar */}
         <div className="w-full flex items-center space-x-2 text-xs text-muted-foreground">
-          <span>0:00</span>
-          <Slider defaultValue={[0]} max={100} step={1} className="w-full cursor-pointer" disabled />
-          <span>{currentTrack.duration}</span>
+          <span>{formatTime(currentTime)}</span>
+          <Slider 
+            value={[currentTime]} 
+            onValueChange={handleSeek} 
+            max={duration} 
+            step={1} 
+            className="w-full cursor-pointer" 
+            disabled={duration === 0}
+          />
+          <span>{formatTime(duration)}</span>
         </div>
       </div>
 
