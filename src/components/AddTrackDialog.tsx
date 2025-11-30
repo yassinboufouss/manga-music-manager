@@ -1,14 +1,16 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { AddTrackSchema, AddTrackFormValues } from '@/lib/schemas';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
-import { showSuccess, showError } from '@/utils/toast';
+import { showError } from '@/utils/toast';
+import { useYoutubeMetadata } from '@/hooks/use-youtube-metadata';
+import { cn } from '@/lib/utils';
 
 // Utility function to extract YouTube ID from various URL formats
 const extractYoutubeId = (urlOrId: string): string | null => {
@@ -38,6 +40,7 @@ const extractYoutubeId = (urlOrId: string): string | null => {
 
 const AddTrackDialog: React.FC = () => {
   const { addTrackToPlaylist } = useMusicPlayer();
+  const { data: metadata, isLoading: isFetchingMetadata, error: metadataError, fetchMetadata } = useYoutubeMetadata();
   const [open, setOpen] = useState(false);
 
   const form = useForm<AddTrackFormValues>({
@@ -49,6 +52,32 @@ const AddTrackDialog: React.FC = () => {
       duration: "0:00",
     },
   });
+  
+  const youtubeIdValue = form.watch("youtubeId");
+
+  // Effect to fetch metadata when a valid ID is present
+  useEffect(() => {
+    if (youtubeIdValue && youtubeIdValue.length === 11 && !isFetchingMetadata) {
+      fetchMetadata(youtubeIdValue);
+    }
+  }, [youtubeIdValue, fetchMetadata, isFetchingMetadata]);
+  
+  // Effect to populate form when metadata arrives
+  useEffect(() => {
+    if (metadata) {
+      form.setValue("title", metadata.title, { shouldValidate: true });
+      form.setValue("artist", metadata.artist, { shouldValidate: true });
+      form.setValue("duration", metadata.duration, { shouldValidate: true });
+    }
+  }, [metadata, form]);
+  
+  // Effect to show error if metadata fetching fails
+  useEffect(() => {
+      if (metadataError) {
+          showError(`Metadata fetch failed: ${metadataError}`);
+      }
+  }, [metadataError]);
+
 
   const onSubmit = async (data: AddTrackFormValues) => {
     const trackData = {
@@ -92,7 +121,7 @@ const AddTrackDialog: React.FC = () => {
         <DialogHeader>
           <DialogTitle>Add New YouTube Track</DialogTitle>
           <DialogDescription>
-            Paste a YouTube URL or ID. The ID will be extracted automatically.
+            Paste a YouTube URL or ID. The track details will be fetched automatically.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -105,12 +134,18 @@ const AddTrackDialog: React.FC = () => {
                 <FormItem>
                   <FormLabel>YouTube URL or Video ID</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="e.g., https://youtu.be/ID or just the ID" 
-                      {...field} 
-                      onChange={handleIdInputChange} // Use custom handler
-                      value={field.value} // Keep controlled
-                    />
+                    <div className="relative">
+                        <Input 
+                          placeholder="e.g., https://youtu.be/ID or just the ID" 
+                          {...field} 
+                          onChange={handleIdInputChange} // Use custom handler
+                          value={field.value} // Keep controlled
+                          className={cn(isFetchingMetadata && "pr-10")}
+                        />
+                        {isFetchingMetadata && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
+                        )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -122,9 +157,9 @@ const AddTrackDialog: React.FC = () => {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title (Manual Input)</FormLabel>
+                  <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Song Title" {...field} />
+                    <Input placeholder="Song Title" {...field} disabled={isFetchingMetadata} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -136,9 +171,9 @@ const AddTrackDialog: React.FC = () => {
               name="artist"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Artist (Manual Input)</FormLabel>
+                  <FormLabel>Artist</FormLabel>
                   <FormControl>
-                    <Input placeholder="Artist Name" {...field} />
+                    <Input placeholder="Artist Name" {...field} disabled={isFetchingMetadata} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -150,16 +185,20 @@ const AddTrackDialog: React.FC = () => {
               name="duration"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Duration (M:SS, Manual Input)</FormLabel>
+                  <FormLabel>Duration (M:SS)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 3:45 or 1:00:00" {...field} />
+                    <Input placeholder="e.g., 3:45" {...field} disabled={isFetchingMetadata} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={form.formState.isSubmitting || isFetchingMetadata || !metadata}
+            >
               {form.formState.isSubmitting ? "Adding..." : "Add Track"}
             </Button>
           </form>
