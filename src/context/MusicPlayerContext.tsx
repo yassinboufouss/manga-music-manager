@@ -174,12 +174,29 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
 
 
   const addTrackToPlaylist = async (track: Omit<Track, 'dbId' | 'orderIndex'>) => {
+    if (!currentPlaylist) {
+        showError("Cannot add track: No playlist selected.");
+        throw new Error("No playlist selected.");
+    }
+    
+    // Check for duplicates
+    const isDuplicate = currentPlaylist.tracks.some(t => t.id === track.id);
+    
+    if (isDuplicate) {
+        showError(`Track "${track.title}" is already in the playlist.`);
+        // Throw a specific error to stop the form submission flow in AddTrackDialog
+        throw new Error("Duplicate track."); 
+    }
+    
     try {
       await addTrackMutation.mutateAsync(track);
       showSuccess(`Track "${track.title}" added successfully!`);
     } catch (error) {
-      console.error("Error adding track:", error);
-      showError("Failed to add track to playlist.");
+      // Only show generic error if it's not the duplicate error we handled above
+      if (error instanceof Error && error.message !== "Duplicate track.") {
+          console.error("Error adding track:", error);
+          showError("Failed to add track to playlist.");
+      }
       throw error;
     }
   };
