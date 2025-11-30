@@ -33,7 +33,7 @@ const Index = () => {
       <div className="w-full max-w-4xl text-center space-y-10">
         
         <div className="space-y-2">
-            <h1 className="text-5xl font-extrabold tracking-tight">Dyad Music Player</h1>
+            <h1 className="text-5xl font-extrabold tracking-tight">Manga Music Player</h1>
             <p className="text-xl text-muted-foreground">
               Your personalized, self-hosted YouTube music collection.
             </p>

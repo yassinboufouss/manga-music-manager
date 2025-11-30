@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, User } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,7 +24,10 @@ const Header: React.FC = () => {
             <Menu className="h-5 w-5" />
           </Button>
         )}
-        <h1 className="text-xl font-semibold text-foreground">Dyad Music</h1>
+        <div className="flex items-center space-x-2">
+          <img src="/logo.png" alt="Manga Music Logo" className="h-8 w-8 rounded-full" />
+          <h1 className="text-xl font-semibold text-foreground">Manga Music</h1>
+        </div>
       </div>
 
       <DropdownMenu>
