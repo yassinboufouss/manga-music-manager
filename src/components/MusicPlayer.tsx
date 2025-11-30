@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { formatTime } from '@/utils/time';
+import { showSuccess } from '@/utils/toast'; // Import toast utility
 
 const MusicPlayer = () => {
   const { currentTrack, isPlaying, setIsPlaying, currentPlaylist, setCurrentTrack } = useMusicPlayer();
@@ -20,6 +21,9 @@ const MusicPlayer = () => {
   
   // State for loading/buffering
   const [isLoading, setIsLoading] = React.useState(false);
+  
+  // Ref to track if the track change was user-initiated (to prevent toast on initial load)
+  const isInitialLoad = useRef(true);
 
   const opts = {
     height: '0', // Hide the video player
@@ -62,11 +66,14 @@ const MusicPlayer = () => {
     };
   }, [isPlaying, updateTime]);
   
-  // Set loading state when track changes
+  // Set loading state and show toast when track changes
   React.useEffect(() => {
       if (currentTrack) {
-          // Assume loading starts when track ID changes
           setIsLoading(true);
+          if (!isInitialLoad.current) {
+              showSuccess(`Now playing: ${currentTrack.title} by ${currentTrack.artist}`);
+          }
+          isInitialLoad.current = false;
       }
   }, [currentTrack]);
 
@@ -85,7 +92,6 @@ const MusicPlayer = () => {
     if (isPlaying) {
         playerRef.current.playVideo();
     }
-    // Note: We rely on onStateChange to set isLoading=false when playback starts (state 1)
   };
   
   const onStateChange = (event: { data: number }) => {
@@ -151,7 +157,6 @@ const MusicPlayer = () => {
     const currentIndex = currentPlaylist.tracks.findIndex(t => t.id === currentTrack.id);
     const nextIndex = (currentIndex + 1) % currentPlaylist.tracks.length;
     setCurrentTrack(currentPlaylist.tracks[nextIndex]);
-    // When setting a new track, we assume playback should continue
     setIsPlaying(true); 
   };
 
@@ -163,7 +168,6 @@ const MusicPlayer = () => {
       previousIndex = currentPlaylist.tracks.length - 1;
     }
     setCurrentTrack(currentPlaylist.tracks[previousIndex]);
-    // When setting a new track, we assume playback should continue
     setIsPlaying(true); 
   };
   

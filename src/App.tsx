@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { MusicPlayerProvider } from "./context/MusicPlayerContext";
+import { SidebarProvider } from "./context/SidebarContext";
 
 const queryClient = new QueryClient();
 
@@ -15,15 +16,17 @@ const App = () => (
       <Toaster />
       <Sonner />
       <MusicPlayerProvider>
-        <div className="dark min-h-screen">
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </div>
+        <SidebarProvider>
+          <div className="dark min-h-screen">
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </div>
+        </SidebarProvider>
       </MusicPlayerProvider>
     </TooltipProvider>
   </QueryClientProvider>

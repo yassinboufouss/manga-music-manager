@@ -3,6 +3,8 @@ import { ListMusic, Play } from 'lucide-react';
 import { useMusicPlayer, Track } from '@/context/MusicPlayerContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useSidebar } from '@/context/SidebarContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TrackItemProps {
   track: Track;
@@ -10,11 +12,17 @@ interface TrackItemProps {
 
 const TrackItem = forwardRef<HTMLDivElement, TrackItemProps>(({ track }, ref) => {
   const { currentTrack, setCurrentTrack, setIsPlaying, isPlaying } = useMusicPlayer();
+  const { setIsSidebarOpen } = useSidebar();
+  const isMobile = useIsMobile();
   const isActive = currentTrack?.id === track.id;
 
   const handleTrackClick = () => {
     setCurrentTrack(track);
     setIsPlaying(true);
+    
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
   };
 
   return (
