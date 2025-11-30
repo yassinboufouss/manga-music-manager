@@ -16,7 +16,8 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
         <TableHeader>
           <TableRow>
             <TableHead className="w-[50px]">Avatar</TableHead>
-            <TableHead>Name / ID</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Email / ID</TableHead>
             <TableHead>Role</TableHead>
             <TableHead className="text-right">Last Updated</TableHead>
           </TableRow>
@@ -28,12 +29,15 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
                 <Avatar className="h-8 w-8">
                   {/* Assuming we don't have avatar_url setup yet, use initials */}
                   <AvatarFallback className="text-xs">
-                    {profile.first_name ? profile.first_name[0] : profile.id[0]}
+                    {profile.first_name ? profile.first_name[0] : profile.email[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
               </TableCell>
               <TableCell className="font-medium">
                 {profile.first_name || 'N/A'} {profile.last_name || ''}
+              </TableCell>
+              <TableCell>
+                <p className="font-medium">{profile.email}</p>
                 <p className="text-xs text-muted-foreground truncate">{profile.id}</p>
               </TableCell>
               <TableCell>
