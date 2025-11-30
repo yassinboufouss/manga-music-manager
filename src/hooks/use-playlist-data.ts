@@ -146,6 +146,22 @@ export const usePlaylistData = () => {
     },
   });
   
+  const deleteAllTracksMutation = useMutation({
+    mutationFn: async (playlistId: string) => {
+      const { error } = await supabase
+        .from('tracks')
+        .delete()
+        .eq('playlist_id', playlistId);
+        
+      if (error) throw error;
+      return playlistId;
+    },
+    onSuccess: () => {
+      // Invalidate the playlist query to refetch the updated track list
+      queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
+    },
+  });
+  
   const updateTrackOrderMutation = useMutation({
     mutationFn: async (updates: { dbId: string; orderIndex: number }[]) => {
       // Perform a batch update for all tracks whose order changed
@@ -191,6 +207,7 @@ export const usePlaylistData = () => {
     playlistQuery,
     addTrackMutation,
     deleteTrackMutation,
+    deleteAllTracksMutation,
     updateTrackOrderMutation,
     updatePlaylistNameMutation,
   };

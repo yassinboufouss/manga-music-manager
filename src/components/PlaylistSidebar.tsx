@@ -10,6 +10,7 @@ import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { reorderArray } from '@/lib/dnd-utils';
 import RenamePlaylistDialog from './RenamePlaylistDialog';
+import ClearPlaylistDialog from './ClearPlaylistDialog';
 
 const PlaylistSidebar = () => {
   const { currentPlaylist, currentTrack, isLoadingData, updateTrackOrder } = useMusicPlayer();
@@ -139,6 +140,10 @@ const PlaylistSidebar = () => {
           </SortableContext>
         </DndContext>
       </ScrollArea>
+      
+      <div className="mt-4 pt-4 border-t border-border">
+        <ClearPlaylistDialog />
+      </div>
     </div>
   );
 };

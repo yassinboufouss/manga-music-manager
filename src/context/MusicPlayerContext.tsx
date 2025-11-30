@@ -28,6 +28,7 @@ interface MusicPlayerContextType {
   setIsPlaying: (playing: boolean) => void;
   addTrackToPlaylist: (track: Omit<Track, 'dbId' | 'orderIndex'>) => Promise<void>;
   deleteTrack: (trackDbId: string) => Promise<void>;
+  deleteAllTracks: () => Promise<void>; // New function
   updateTrackOrder: (tracks: Track[]) => Promise<void>;
   isLoadingData: boolean;
 }
@@ -40,7 +41,7 @@ interface MusicPlayerProviderProps {
 }
 
 export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
-  const { playlistQuery, addTrackMutation, deleteTrackMutation, updateTrackOrderMutation } = usePlaylistData();
+  const { playlistQuery, addTrackMutation, deleteTrackMutation, deleteAllTracksMutation, updateTrackOrderMutation } = usePlaylistData();
   
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -95,6 +96,20 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
     }
   };
   
+  const deleteAllTracks = async () => {
+      if (!currentPlaylist) return;
+      
+      try {
+          await deleteAllTracksMutation.mutateAsync(currentPlaylist.id);
+          showSuccess("Playlist cleared successfully!");
+          // The useEffect hook above will handle setting currentTrack to null
+      } catch (error) {
+          console.error("Error clearing playlist:", error);
+          showError("Failed to clear playlist.");
+          throw error;
+      }
+  };
+  
   const updateTrackOrder = async (tracks: Track[]) => {
       const updates = tracks.map((track, index) => ({
           dbId: track.dbId!,
@@ -119,6 +134,7 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
     setIsPlaying,
     addTrackToPlaylist,
     deleteTrack,
+    deleteAllTracks, // Exposed
     updateTrackOrder,
     isLoadingData,
   };
