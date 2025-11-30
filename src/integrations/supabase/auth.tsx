@@ -3,31 +3,67 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from './client';
 import { Loader2 } from 'lucide-react';
 
+// Extend the User type to include profile data
+interface AppUser extends User {
+  is_admin: boolean;
+}
+
 interface AuthContextType {
   session: Session | null;
-  user: User | null;
+  user: AppUser | null;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to fetch profile data
+const fetchUserProfile = async (user: User): Promise<AppUser> => {
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+
+    if (error) {
+        console.error("Error fetching profile:", error);
+        // Return user with default admin status if fetch fails
+        return { ...user, is_admin: false };
+    }
+    
+    return { ...user, is_admin: data.is_admin };
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleSession = async (session: Session | null) => {
+    setSession(session);
+    if (session?.user) {
+        const appUser = await fetchUserProfile(session.user);
+        setUser(appUser);
+    } else {
+        setUser(null);
+    }
+    setIsLoading(false);
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
+      // Handle sign out immediately
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setSession(null);
+        setIsLoading(false);
+      } else {
+        handleSession(session);
+      }
     });
 
     // Fetch initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
+      handleSession(session);
     });
 
     return () => {
