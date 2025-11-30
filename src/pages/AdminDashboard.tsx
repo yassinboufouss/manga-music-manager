@@ -1,17 +1,35 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAdmin } from '@/hooks/use-admin';
-import { useAdminProfiles } from '@/hooks/use-admin-profiles';
+import { useAdminProfiles, Profile } from '@/hooks/use-admin-profiles';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, ShieldAlert, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import UserTable from '@/components/Admin/UserTable';
+import { Input } from '@/components/ui/input';
 
 const AdminDashboard: React.FC = () => {
   const isAdmin = useAdmin();
   const { data: profiles, isLoading, isError, error } = useAdminProfiles();
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Calculate height dynamically: 100vh - Player (80px) - Header (64px)
   const mainContentHeightClass = "min-h-[calc(100vh-80px-64px)]";
+
+  // Filtering logic
+  const filteredProfiles = useMemo(() => {
+    if (!profiles) return [];
+    if (!searchTerm) return profiles;
+
+    const normalizedSearchTerm = searchTerm.toLowerCase();
+
+    return profiles.filter((profile: Profile) => {
+      const fullName = `${profile.first_name || ''} ${profile.last_name || ''}`.toLowerCase();
+      const email = profile.email.toLowerCase();
+      
+      return fullName.includes(normalizedSearchTerm) || email.includes(normalizedSearchTerm);
+    });
+  }, [profiles, searchTerm]);
+
 
   if (!isAdmin) {
     return (
@@ -41,6 +59,15 @@ const AdminDashboard: React.FC = () => {
       
       <h2 className="text-2xl font-semibold mb-4">User Profiles</h2>
       
+      {/* Search Input */}
+      <div className="mb-6 max-w-4xl">
+        <Input
+          placeholder="Search users by name or email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      
       {isLoading && (
         <div className="flex items-center space-x-2 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
@@ -58,14 +85,21 @@ const AdminDashboard: React.FC = () => {
         </Alert>
       )}
       
-      {profiles && profiles.length > 0 && (
-        <div className="max-w-4xl">
-          <UserTable profiles={profiles} />
-        </div>
-      )}
-      
-      {profiles && profiles.length === 0 && !isLoading && (
-        <p className="text-muted-foreground">No user profiles found.</p>
+      {!isLoading && profiles && (
+        <>
+          {filteredProfiles.length > 0 ? (
+            <div className="max-w-4xl">
+              <UserTable profiles={filteredProfiles} />
+            </div>
+          ) : (
+            <p className="text-muted-foreground">
+              {profiles.length === 0 
+                ? "No user profiles found." 
+                : `No users match your search criteria: "${searchTerm}".`
+              }
+            </p>
+          )}
+        </>
       )}
     </div>
   );
