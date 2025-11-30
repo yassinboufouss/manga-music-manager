@@ -41,9 +41,9 @@ const MusicPlayer = () => {
 
   const updateTime = useCallback(() => {
     if (playerRef.current) {
-      playerRef.current.getCurrentTime().then((time: number) => {
-        setCurrentTime(time);
-      });
+      // FIX: getCurrentTime is synchronous
+      const time = playerRef.current.getCurrentTime();
+      setCurrentTime(time);
     }
   }, []);
 
@@ -84,9 +84,10 @@ const MusicPlayer = () => {
     
     // Reset time and get duration when a new track loads
     setCurrentTime(0);
-    playerRef.current.getDuration().then((d: number) => {
-        setDuration(d);
-    });
+    
+    // FIX: getDuration is synchronous
+    const d = playerRef.current.getDuration();
+    setDuration(d);
     
     // If we are supposed to be playing, start playback immediately upon ready
     if (isPlaying) {
