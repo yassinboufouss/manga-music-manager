@@ -179,7 +179,7 @@ const MusicPlayer = () => {
       {/* Track Info */}
       <div className="flex items-center w-1/4 min-w-[200px]">
         <img 
-          src={`https://img.youtube.com/vi/${currentTrack.id}/default.jpg`} 
+          src={`https://img.youtube.com/vi/${currentTrack.id}/mqdefault.jpg`} 
           alt={currentTrack.title} 
           className="w-12 h-12 rounded mr-3 object-cover"
         />

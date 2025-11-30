@@ -22,22 +22,24 @@ const TrackItem = forwardRef<HTMLDivElement, TrackItemProps>(({ track }, ref) =>
       ref={ref}
       className={cn(
         "flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors",
-        isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold" : "hover:bg-sidebar-accent/50 text-sidebar-foreground"
+        isActive 
+          ? "bg-primary/10 text-primary font-semibold" // Subtle background, bright text
+          : "hover:bg-secondary/50 text-foreground" // Subtle hover
       )}
       onClick={handleTrackClick}
     >
       <div className="flex items-center space-x-3 overflow-hidden">
         {isActive && isPlaying ? (
-          <Play className="h-4 w-4 fill-sidebar-primary text-sidebar-primary" />
+          <Play className="h-4 w-4 fill-primary text-primary" />
         ) : (
           <ListMusic className="h-4 w-4 text-muted-foreground" />
         )}
         <div className="truncate">
           <p className="text-sm truncate">{track.title}</p>
-          <p className={cn("text-xs truncate", isActive ? "text-sidebar-primary" : "text-muted-foreground")}>{track.artist}</p>
+          <p className={cn("text-xs truncate", isActive ? "text-primary/80" : "text-muted-foreground")}>{track.artist}</p>
         </div>
       </div>
-      <span className={cn("text-xs ml-4", isActive ? "text-sidebar-primary" : "text-muted-foreground")}>
+      <span className={cn("text-xs ml-4", isActive ? "text-primary/80" : "text-muted-foreground")}>
         {track.duration}
       </span>
     </div>
@@ -80,17 +82,17 @@ const PlaylistSidebar = () => {
 
 
   return (
-    <div className="w-full h-full flex flex-col bg-sidebar text-sidebar-foreground p-4 border-r border-sidebar-border">
-      <h2 className="text-xl font-bold mb-6 text-sidebar-primary-foreground">Dyad Music</h2>
+    <div className="w-full h-full flex flex-col bg-background text-foreground p-4 border-r border-border">
+      <h2 className="text-2xl font-bold mb-6 text-primary">Dyad Music</h2>
       
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-sidebar-primary-foreground mb-2">Playlists</h3>
-        <div className="p-3 rounded-lg bg-sidebar-accent text-sidebar-accent-foreground font-medium">
+        <h3 className="text-lg font-semibold mb-2 text-foreground">Playlists</h3>
+        <div className="p-3 rounded-lg bg-secondary text-secondary-foreground font-medium">
             {currentPlaylist.name}
         </div>
       </div>
 
-      <h3 className="text-lg font-semibold text-sidebar-primary-foreground mb-2 mt-4">Tracks</h3>
+      <h3 className="text-lg font-semibold mb-2 mt-4 text-foreground">Tracks</h3>
 
       <ScrollArea className="flex-grow h-0" ref={scrollAreaRef as React.RefObject<HTMLDivElement>}>
         <div className="space-y-1 pr-4">
