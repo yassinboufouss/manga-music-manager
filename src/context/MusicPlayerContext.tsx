@@ -26,6 +26,7 @@ interface MusicPlayerContextType {
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;
   addTrackToPlaylist: (track: Omit<Track, 'dbId'>) => Promise<void>;
+  deleteTrack: (trackDbId: string) => Promise<void>;
   isLoadingData: boolean;
 }
 
@@ -37,7 +38,7 @@ interface MusicPlayerProviderProps {
 }
 
 export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
-  const { playlistQuery, addTrackMutation } = usePlaylistData();
+  const { playlistQuery, addTrackMutation, deleteTrackMutation } = usePlaylistData();
   
   const [currentPlaylist, setCurrentPlaylist] = useState<Playlist | null>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -51,15 +52,20 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
       const newPlaylist = playlistQuery.data;
       setCurrentPlaylist(newPlaylist);
       
-      // If no track is currently selected, select the first one from the new playlist
-      if (!currentTrack && newPlaylist.tracks.length > 0) {
-        setCurrentTrack(newPlaylist.tracks[0]);
+      const currentTrackStillExists = currentTrack && newPlaylist.tracks.some(t => t.dbId === currentTrack.dbId);
+
+      if (!currentTrackStillExists) {
+          // If the current track was deleted or never set, select the first track if available
+          const nextTrack = newPlaylist.tracks[0] || null;
+          setCurrentTrack(nextTrack);
+          if (!nextTrack) {
+              setIsPlaying(false);
+          }
       }
       
-      // If the current track is no longer in the playlist (e.g., deleted by another client), reset it
-      if (currentTrack && !newPlaylist.tracks.some(t => t.dbId === currentTrack.dbId)) {
-          setCurrentTrack(newPlaylist.tracks[0] || null);
-          setIsPlaying(false);
+      // If no track was selected initially, select the first one
+      if (!currentTrack && newPlaylist.tracks.length > 0) {
+        setCurrentTrack(newPlaylist.tracks[0]);
       }
     }
   }, [playlistQuery.data, currentTrack]);
@@ -75,6 +81,17 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
       throw error;
     }
   };
+  
+  const deleteTrack = async (trackDbId: string) => {
+    try {
+      await deleteTrackMutation.mutateAsync(trackDbId);
+      showSuccess("Track removed successfully!");
+    } catch (error) {
+      console.error("Error deleting track:", error);
+      showError("Failed to remove track from playlist.");
+      throw error;
+    }
+  };
 
   const value = {
     currentPlaylist,
@@ -83,6 +100,7 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
     isPlaying,
     setIsPlaying,
     addTrackToPlaylist,
+    deleteTrack,
     isLoadingData,
   };
   

@@ -120,9 +120,26 @@ export const usePlaylistData = () => {
       queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
     },
   });
+  
+  const deleteTrackMutation = useMutation({
+    mutationFn: async (trackDbId: string) => {
+      const { error } = await supabase
+        .from('tracks')
+        .delete()
+        .eq('id', trackDbId);
+        
+      if (error) throw error;
+      return trackDbId;
+    },
+    onSuccess: () => {
+      // Invalidate the playlist query to refetch the updated track list
+      queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
+    },
+  });
 
   return {
     playlistQuery,
     addTrackMutation,
+    deleteTrackMutation,
   };
 };

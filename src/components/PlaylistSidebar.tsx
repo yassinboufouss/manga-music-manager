@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AddTrackDialog from './AddTrackDialog';
+import DeleteTrackDialog from './DeleteTrackDialog';
 
 interface TrackItemProps {
   track: Track;
@@ -32,27 +33,33 @@ const TrackItem = forwardRef<HTMLDivElement, TrackItemProps>(({ track }, ref) =>
     <div
       ref={ref}
       className={cn(
-        "flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors",
+        "flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors group relative",
         isActive 
           ? "bg-primary/10 text-primary font-semibold" // Subtle background, bright text
           : "hover:bg-secondary/50 text-foreground" // Subtle hover
       )}
       onClick={handleTrackClick}
     >
-      <div className="flex items-center space-x-3 overflow-hidden">
+      <div className="flex items-center space-x-3 overflow-hidden flex-1 min-w-0">
         {isActive && isPlaying ? (
-          <Play className="h-4 w-4 fill-primary text-primary" />
+          <Play className="h-4 w-4 fill-primary text-primary flex-shrink-0" />
         ) : (
-          <ListMusic className="h-4 w-4 text-muted-foreground" />
+          <ListMusic className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         )}
-        <div className="truncate">
+        <div className="truncate flex-1">
           <p className="text-sm truncate">{track.title}</p>
           <p className={cn("text-xs truncate", isActive ? "text-primary/80" : "text-muted-foreground")}>{track.artist}</p>
         </div>
       </div>
-      <span className={cn("text-xs ml-4", isActive ? "text-primary/80" : "text-muted-foreground")}>
-        {track.duration}
-      </span>
+      
+      <div className="flex items-center space-x-2 flex-shrink-0">
+        <span className={cn("text-xs ml-4", isActive ? "text-primary/80" : "text-muted-foreground")}>
+          {track.duration}
+        </span>
+        
+        {/* Delete Button - only show if track has a dbId (i.e., it's persisted) */}
+        {track.dbId && <DeleteTrackDialog track={track} />}
+      </div>
     </div>
   );
 });
