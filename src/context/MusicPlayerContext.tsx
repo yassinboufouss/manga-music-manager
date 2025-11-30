@@ -38,6 +38,14 @@ interface MusicPlayerContextType {
   deleteAllTracks: () => Promise<void>;
   updateTrackOrder: (tracks: Track[]) => Promise<void>;
   isLoadingData: boolean;
+  
+  // New playback controls
+  isLooping: boolean;
+  setIsLooping: React.Dispatch<React.SetStateAction<boolean>>; // Fixed type
+  isAutoplayEnabled: boolean;
+  setIsAutoplayEnabled: React.Dispatch<React.SetStateAction<boolean>>; // Fixed type
+  playNext: () => void;
+  playPrevious: () => void;
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
@@ -51,6 +59,8 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLooping, setIsLooping] = useState(false); // New state
+  const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(true); // New state
   
   // We need a temporary state for currentPlaylist to pass to the hook for mutations
   const [currentPlaylistState, setCurrentPlaylistState] = useState<Playlist | null>(null);
@@ -81,6 +91,43 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
         tracks: tracks,
       }
     : null;
+    
+  // --- Playback Navigation Logic ---
+  
+  const playNext = React.useCallback(() => {
+    if (!currentTrack || !currentPlaylist || currentPlaylist.tracks.length === 0) return;
+    
+    // Use dbId for reliable identification if available, otherwise fall back to YouTube ID
+    const currentId = currentTrack.dbId || currentTrack.id;
+    const currentIndex = currentPlaylist.tracks.findIndex(t => (t.dbId || t.id) === currentId);
+    
+    const nextIndex = (currentIndex + 1) % currentPlaylist.tracks.length;
+    
+    // If we are at the end of the playlist and autoplay is disabled, stop playback
+    if (!isAutoplayEnabled && currentIndex === currentPlaylist.tracks.length - 1) {
+        setCurrentTrack(currentPlaylist.tracks[currentIndex]); // Stay on the last track
+        setIsPlaying(false);
+        return;
+    }
+    
+    setCurrentTrack(currentPlaylist.tracks[nextIndex]);
+    setIsPlaying(true); 
+  }, [currentTrack, currentPlaylist, isAutoplayEnabled]);
+
+  const playPrevious = React.useCallback(() => {
+    if (!currentTrack || !currentPlaylist || currentPlaylist.tracks.length === 0) return;
+    
+    const currentId = currentTrack.dbId || currentTrack.id;
+    const currentIndex = currentPlaylist.tracks.findIndex(t => (t.dbId || t.id) === currentId);
+    
+    let previousIndex = currentIndex - 1;
+    if (previousIndex < 0) {
+      previousIndex = currentPlaylist.tracks.length - 1;
+    }
+    setCurrentTrack(currentPlaylist.tracks[previousIndex]);
+    setIsPlaying(true); 
+  }, [currentTrack, currentPlaylist]);
+
 
   // Effect 1: Initialize selectedPlaylistId when playlists load
   useEffect(() => {
@@ -220,6 +267,14 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
     deleteAllTracks,
     updateTrackOrder,
     isLoadingData,
+    
+    // New playback controls
+    isLooping,
+    setIsLooping,
+    isAutoplayEnabled,
+    setIsAutoplayEnabled,
+    playNext,
+    playPrevious,
   };
   
   if (isError) {

@@ -1,6 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import YouTube, { YouTubePlayer } from 'react-youtube';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, Repeat, Repeat1, ListMusic } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -8,9 +8,24 @@ import { cn } from '@/lib/utils';
 import { formatTime } from '@/utils/time';
 import { showSuccess } from '@/utils/toast';
 import { usePlaybackShortcuts } from '@/hooks/use-playback-shortcuts';
+import { Toggle } from '@/components/ui/toggle';
 
 const MusicPlayer = () => {
-  const { currentTrack, isPlaying, setIsPlaying, currentPlaylist, setCurrentTrack, isLoadingData } = useMusicPlayer();
+  const { 
+    currentTrack, 
+    isPlaying, 
+    setIsPlaying, 
+    currentPlaylist, 
+    setCurrentTrack, 
+    isLoadingData,
+    isLooping,
+    setIsLooping,
+    isAutoplayEnabled,
+    setIsAutoplayEnabled,
+    playNext, // Now from context
+    playPrevious, // Now from context
+  } = useMusicPlayer();
+  
   const playerRef = useRef<YouTubePlayer | null>(null);
   const [volume, setVolume] = React.useState(50);
   const [isMuted, setIsMuted] = React.useState(false);
@@ -18,7 +33,7 @@ const MusicPlayer = () => {
   // State for progress
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
-  const intervalRef = useRef<number | null>(null); // Fixed initialization
+  const intervalRef = useRef<number | null>(null);
   
   // State for loading/buffering
   const [isLoading, setIsLoading] = React.useState(false);
@@ -47,32 +62,6 @@ const MusicPlayer = () => {
     }
   }, []);
   
-  const playNext = useCallback(() => {
-    if (!currentTrack || !currentPlaylist || currentPlaylist.tracks.length === 0) return;
-    
-    // Use dbId for reliable identification if available, otherwise fall back to YouTube ID
-    const currentId = currentTrack.dbId || currentTrack.id;
-    const currentIndex = currentPlaylist.tracks.findIndex(t => (t.dbId || t.id) === currentId);
-    
-    const nextIndex = (currentIndex + 1) % currentPlaylist.tracks.length;
-    setCurrentTrack(currentPlaylist.tracks[nextIndex]);
-    setIsPlaying(true); 
-  }, [currentTrack, currentPlaylist, setCurrentTrack, setIsPlaying]);
-
-  const playPrevious = useCallback(() => {
-    if (!currentTrack || !currentPlaylist || currentPlaylist.tracks.length === 0) return;
-    
-    const currentId = currentTrack.dbId || currentTrack.id;
-    const currentIndex = currentPlaylist.tracks.findIndex(t => (t.dbId || t.id) === currentId);
-    
-    let previousIndex = currentIndex - 1;
-    if (previousIndex < 0) {
-      previousIndex = currentPlaylist.tracks.length - 1;
-    }
-    setCurrentTrack(currentPlaylist.tracks[previousIndex]);
-    setIsPlaying(true); 
-  }, [currentTrack, currentPlaylist, setCurrentTrack, setIsPlaying]);
-
   const togglePlayPause = useCallback(() => {
     if (!playerRef.current || isLoading) return;
 
@@ -152,7 +141,16 @@ const MusicPlayer = () => {
     } else if (state === 0) { // Ended
       setIsPlaying(false);
       setIsLoading(false);
-      playNext();
+      
+      if (isLooping) {
+          // If looping, restart the current track
+          playerRef.current?.seekTo(0, true);
+          playerRef.current?.playVideo();
+          setIsPlaying(true);
+      } else {
+          // Otherwise, play the next track (which respects isAutoplayEnabled)
+          playNext();
+      }
     }
   };
 
@@ -189,6 +187,14 @@ const MusicPlayer = () => {
     if (playerRef.current) {
       playerRef.current.seekTo(seekTime, true);
     }
+  };
+  
+  const handleLoopToggle = () => {
+      setIsLooping(prev => !prev);
+  };
+  
+  const handleAutoplayToggle = () => {
+      setIsAutoplayEnabled(prev => !prev);
   };
 
   if (isLoadingData) {
@@ -238,10 +244,24 @@ const MusicPlayer = () => {
 
       {/* Controls */}
       <div className="flex flex-col items-center w-1/2 max-w-lg">
-        <div className="flex space-x-4 mb-1">
+        <div className="flex space-x-4 mb-1 items-center">
+          
+          {/* Loop Toggle */}
+          <Toggle 
+            pressed={isLooping} 
+            onPressedChange={handleLoopToggle} 
+            variant="outline" 
+            size="sm"
+            className={cn("h-8 w-8", isLooping ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground hover:bg-secondary")}
+            aria-label="Toggle loop"
+          >
+            <Repeat className="h-4 w-4" />
+          </Toggle>
+          
           <Button variant="ghost" size="icon" onClick={playPrevious} className="hover:bg-transparent text-foreground hover:text-primary">
             <SkipBack className="h-5 w-5" />
           </Button>
+          
           <Button 
             variant="secondary" 
             size="icon" 
@@ -257,9 +277,23 @@ const MusicPlayer = () => {
                 <Play className="h-5 w-5 fill-current" />
             )}
           </Button>
+          
           <Button variant="ghost" size="icon" onClick={playNext} className="hover:bg-transparent text-foreground hover:text-primary">
             <SkipForward className="h-5 w-5" />
           </Button>
+          
+          {/* Autoplay Toggle */}
+          <Toggle 
+            pressed={isAutoplayEnabled} 
+            onPressedChange={handleAutoplayToggle} 
+            variant="outline" 
+            size="sm"
+            className={cn("h-8 w-8", isAutoplayEnabled ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground hover:bg-secondary")}
+            aria-label="Toggle autoplay"
+          >
+            <ListMusic className="h-4 w-4" />
+          </Toggle>
+          
         </div>
         {/* Progress Bar */}
         <div className="w-full flex items-center space-x-2 text-xs text-muted-foreground">
