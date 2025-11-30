@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import AddTrackDialog from './AddTrackDialog'; // Import the new component
 
 interface TrackItemProps {
   track: Track;
@@ -98,6 +99,10 @@ const PlaylistSidebar = () => {
         <div className="p-3 rounded-lg bg-secondary text-secondary-foreground font-medium">
             {currentPlaylist.name}
         </div>
+      </div>
+      
+      <div className="mb-4">
+        <AddTrackDialog />
       </div>
 
       <h3 className="text-lg font-semibold mb-2 mt-4 text-foreground">Tracks</h3>

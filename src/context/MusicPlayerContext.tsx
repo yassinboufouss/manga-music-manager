@@ -34,6 +34,7 @@ interface MusicPlayerContextType {
   setCurrentTrack: (track: Track) => void;
   isPlaying: boolean;
   setIsPlaying: (playing: boolean) => void;
+  addTrackToPlaylist: (track: Track) => void; // New function
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
@@ -44,9 +45,16 @@ interface MusicPlayerProviderProps {
 }
 
 export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
-  const [currentPlaylist] = useState<Playlist>(MOCK_PLAYLIST);
+  const [currentPlaylist, setCurrentPlaylist] = useState<Playlist>(MOCK_PLAYLIST);
   const [currentTrack, setCurrentTrack] = useState<Track | null>(MOCK_PLAYLIST.tracks[0]);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const addTrackToPlaylist = (track: Track) => {
+    setCurrentPlaylist(prev => ({
+      ...prev,
+      tracks: [...prev.tracks, track],
+    }));
+  };
 
   const value = {
     currentPlaylist,
@@ -54,6 +62,7 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
     setCurrentTrack,
     isPlaying,
     setIsPlaying,
+    addTrackToPlaylist,
   };
 
   return (
