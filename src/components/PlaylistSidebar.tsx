@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 
 const PlaylistSidebar = () => {
   const { currentPlaylist, isLoadingData, selectedPlaylistId } = useMusicPlayer();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [trackSearchTerm, setTrackSearchTerm] = useState('');
+  const [playlistSearchTerm, setPlaylistSearchTerm] = useState('');
   
   if (isLoadingData && !currentPlaylist) {
       return (
@@ -26,7 +27,7 @@ const PlaylistSidebar = () => {
       return (
           <div className="w-full h-full flex flex-col bg-background text-foreground p-4 border-r border-border">
               <h2 className="text-2xl font-bold mb-6 text-primary">Dyad Music</h2>
-              <PlaylistSelector />
+              <PlaylistSelector searchTerm={playlistSearchTerm} />
           </div>
       );
   }
@@ -35,7 +36,15 @@ const PlaylistSidebar = () => {
     <div className="w-full h-full flex flex-col bg-background text-foreground p-4 border-r border-border">
       
       <div className="mb-4">
-        <PlaylistSelector />
+        {/* Playlist Search Input */}
+        <div className="mb-3">
+          <Input 
+            placeholder="Search playlists..." 
+            value={playlistSearchTerm} 
+            onChange={(e) => setPlaylistSearchTerm(e.target.value)} 
+          />
+        </div>
+        <PlaylistSelector searchTerm={playlistSearchTerm} />
       </div>
       
       {/* Current Playlist Info and Actions */}
@@ -49,20 +58,20 @@ const PlaylistSidebar = () => {
         <AddTrackDialog />
       </div>
       
-      {/* Search Input */}
+      {/* Search Input for Tracks */}
       {currentPlaylist && currentPlaylist.tracks.length > 0 && (
         <div className="mb-4">
           <Input 
             placeholder="Search tracks..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
+            value={trackSearchTerm} 
+            onChange={(e) => setTrackSearchTerm(e.target.value)} 
           />
         </div>
       )}
 
       {/* Tracks List (Scrollable Area) */}
       <div className="flex-grow overflow-y-auto">
-        <TrackList searchTerm={searchTerm} />
+        <TrackList searchTerm={trackSearchTerm} />
       </div>
       
       <div className="mt-4 pt-4 border-t border-border space-y-2">

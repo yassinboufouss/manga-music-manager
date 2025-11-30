@@ -1,11 +1,28 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import CreatePlaylistDialog from './CreatePlaylistDialog';
 import PlaylistListItem from './PlaylistListItem';
 
-const PlaylistSelector: React.FC = () => {
+interface PlaylistSelectorProps {
+  searchTerm: string;
+}
+
+const PlaylistSelector: React.FC<PlaylistSelectorProps> = ({ searchTerm }) => {
   const { playlists, selectedPlaylistId } = useMusicPlayer();
+
+  // Filtering logic
+  const filteredPlaylists = useMemo(() => {
+    if (!playlists) return [];
+    if (!searchTerm) return playlists;
+
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+    
+    return playlists.filter(playlist => 
+      playlist.name.toLowerCase().includes(normalizedSearchTerm)
+    );
+  }, [playlists, searchTerm]);
+
 
   if (!playlists || playlists.length === 0) {
     return (
@@ -17,6 +34,7 @@ const PlaylistSelector: React.FC = () => {
   }
   
   const totalPlaylists = playlists.length;
+  const playlistsToDisplay = filteredPlaylists;
 
   return (
     <div className="space-y-3">
@@ -24,19 +42,23 @@ const PlaylistSelector: React.FC = () => {
       
       <ScrollArea className="h-[150px] pr-4">
         <div className="space-y-1">
-          {playlists.map((playlist) => {
-            const isSelected = playlist.id === selectedPlaylistId;
-            const isLastPlaylist = totalPlaylists === 1;
-            
-            return (
-              <PlaylistListItem
-                key={playlist.id}
-                playlist={playlist}
-                isSelected={isSelected}
-                isLastPlaylist={isLastPlaylist}
-              />
-            );
-          })}
+          {playlistsToDisplay.length === 0 ? (
+            <p className="text-sm text-muted-foreground p-2">No playlists match "{searchTerm}".</p>
+          ) : (
+            playlistsToDisplay.map((playlist) => {
+              const isSelected = playlist.id === selectedPlaylistId;
+              const isLastPlaylist = totalPlaylists === 1;
+              
+              return (
+                <PlaylistListItem
+                  key={playlist.id}
+                  playlist={playlist}
+                  isSelected={isSelected}
+                  isLastPlaylist={isLastPlaylist}
+                />
+              );
+            })
+          )}
         </div>
       </ScrollArea>
       
