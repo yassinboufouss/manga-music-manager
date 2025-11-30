@@ -33,6 +33,7 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
             <TableHead>Name</TableHead>
             <TableHead>Email / ID</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Joined Date</TableHead>
             <TableHead className="text-center">Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -76,6 +77,9 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
                   ) : (
                     <Badge variant="secondary">User</Badge>
                   )}
+                </TableCell>
+                <TableCell>
+                  {format(new Date(profile.created_at), 'MMM d, yyyy')}
                 </TableCell>
                 <TableCell className="text-center">
                     {currentlyBanned ? (

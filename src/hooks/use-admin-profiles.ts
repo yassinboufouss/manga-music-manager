@@ -11,13 +11,14 @@ export interface Profile {
   updated_at: string;
   email: string; // Added email field
   banned_until: string | null; // Added banned_until field
+  created_at: string; // Added created_at field
 }
 
 const fetchAllProfiles = async (): Promise<Profile[]> => {
   // Admins can read all profiles due to RLS policy
   const { data, error } = await supabase
     .from('user_details_view') // Querying the new view
-    .select('id, first_name, last_name, avatar_url, is_admin, updated_at, email, banned_until')
+    .select('id, first_name, last_name, avatar_url, is_admin, updated_at, email, banned_until, created_at')
     .order('updated_at', { ascending: false });
 
   if (error) throw error;
