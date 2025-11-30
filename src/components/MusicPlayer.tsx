@@ -7,6 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { formatTime } from '@/utils/time';
 import { showSuccess } from '@/utils/toast'; // Import toast utility
+import { usePlaybackShortcuts } from '@/hooks/use-playback-shortcuts'; // Import the new hook
 
 const MusicPlayer = () => {
   const { currentTrack, isPlaying, setIsPlaying, currentPlaylist, setCurrentTrack } = useMusicPlayer();
@@ -46,6 +47,41 @@ const MusicPlayer = () => {
       setCurrentTime(time);
     }
   }, []);
+  
+  const playNext = useCallback(() => {
+    if (!currentTrack) return;
+    const currentIndex = currentPlaylist.tracks.findIndex(t => t.id === currentTrack.id);
+    const nextIndex = (currentIndex + 1) % currentPlaylist.tracks.length;
+    setCurrentTrack(currentPlaylist.tracks[nextIndex]);
+    setIsPlaying(true); 
+  }, [currentTrack, currentPlaylist.tracks, setCurrentTrack, setIsPlaying]);
+
+  const playPrevious = useCallback(() => {
+    if (!currentTrack) return;
+    const currentIndex = currentPlaylist.tracks.findIndex(t => t.id === currentTrack.id);
+    let previousIndex = currentIndex - 1;
+    if (previousIndex < 0) {
+      previousIndex = currentPlaylist.tracks.length - 1;
+    }
+    setCurrentTrack(currentPlaylist.tracks[previousIndex]);
+    setIsPlaying(true); 
+  }, [currentTrack, currentPlaylist.tracks, setCurrentTrack, setIsPlaying]);
+
+  const togglePlayPause = useCallback(() => {
+    if (!playerRef.current || isLoading) return;
+
+    if (isPlaying) {
+      playerRef.current.pauseVideo();
+      setIsPlaying(false);
+    } else {
+      playerRef.current.playVideo();
+      setIsPlaying(true);
+    }
+  }, [isPlaying, isLoading, setIsPlaying]);
+
+  // Integrate keyboard shortcuts
+  usePlaybackShortcuts({ togglePlayPause, playNext, playPrevious });
+
 
   React.useEffect(() => {
     if (isPlaying) {
@@ -114,18 +150,6 @@ const MusicPlayer = () => {
     }
   };
 
-  const togglePlayPause = () => {
-    if (!playerRef.current || isLoading) return;
-
-    if (isPlaying) {
-      playerRef.current.pauseVideo();
-      setIsPlaying(false);
-    } else {
-      playerRef.current.playVideo();
-      setIsPlaying(true);
-    }
-  };
-
   const handleVolumeChange = (newVolume: number[]) => {
     const newVol = newVolume[0];
     setVolume(newVol);
@@ -151,25 +175,6 @@ const MusicPlayer = () => {
       playerRef.current.setVolume(0);
       setIsMuted(true);
     }
-  };
-
-  const playNext = () => {
-    if (!currentTrack) return;
-    const currentIndex = currentPlaylist.tracks.findIndex(t => t.id === currentTrack.id);
-    const nextIndex = (currentIndex + 1) % currentPlaylist.tracks.length;
-    setCurrentTrack(currentPlaylist.tracks[nextIndex]);
-    setIsPlaying(true); 
-  };
-
-  const playPrevious = () => {
-    if (!currentTrack) return;
-    const currentIndex = currentPlaylist.tracks.findIndex(t => t.id === currentTrack.id);
-    let previousIndex = currentIndex - 1;
-    if (previousIndex < 0) {
-      previousIndex = currentPlaylist.tracks.length - 1;
-    }
-    setCurrentTrack(currentPlaylist.tracks[previousIndex]);
-    setIsPlaying(true); 
   };
   
   const handleSeek = (value: number[]) => {
