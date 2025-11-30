@@ -354,7 +354,7 @@ const MusicPlayer = () => {
         
         {/* Playback Rate Selector (Hidden on mobile) */}
         <Select value={playbackRate.toString()} onValueChange={handleRateChange}>
-            <SelectTrigger className="w-[60px] sm:w-[80px] h-7 sm:h-8 text-[10px] sm:text-xs hidden sm:flex">
+            <SelectTrigger className="w-[60px] sm:w-[80px] h-7 sm:h-8 text-[10px] sm:text-xs hidden sm:flex text-white">
                 <SelectValue placeholder="1x" />
             </SelectTrigger>
             <SelectContent>
