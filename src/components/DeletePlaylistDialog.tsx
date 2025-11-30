@@ -37,6 +37,7 @@ const DeletePlaylistDialog: React.FC<DeletePlaylistDialogProps> = ({ playlistId,
           size="icon" 
           className="h-6 w-6 text-muted-foreground hover:text-destructive"
           aria-label={`Delete playlist ${playlistName}`}
+          onClick={(e) => e.stopPropagation()}
         >
           <Trash className="h-4 w-4" />
         </Button>

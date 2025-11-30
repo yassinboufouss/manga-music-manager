@@ -1,12 +1,11 @@
 import React from 'react';
-import { ListMusic, Check } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
-import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import CreatePlaylistDialog from './CreatePlaylistDialog';
+import PlaylistListItem from './PlaylistListItem';
 
 const PlaylistSelector: React.FC = () => {
-  const { playlists, selectedPlaylistId, setSelectedPlaylistId } = useMusicPlayer();
+  const { playlists, selectedPlaylistId } = useMusicPlayer();
 
   if (!playlists || playlists.length === 0) {
     return (
@@ -16,6 +15,8 @@ const PlaylistSelector: React.FC = () => {
       </div>
     );
   }
+  
+  const totalPlaylists = playlists.length;
 
   return (
     <div className="space-y-3">
@@ -25,24 +26,15 @@ const PlaylistSelector: React.FC = () => {
         <div className="space-y-1">
           {playlists.map((playlist) => {
             const isSelected = playlist.id === selectedPlaylistId;
+            const isLastPlaylist = totalPlaylists === 1;
+            
             return (
-              <div
+              <PlaylistListItem
                 key={playlist.id}
-                className={cn(
-                  "flex items-center p-3 rounded-lg cursor-pointer transition-colors",
-                  isSelected 
-                    ? "bg-primary text-primary-foreground font-medium hover:bg-primary/90"
-                    : "bg-secondary/50 text-secondary-foreground hover:bg-secondary/80"
-                )}
-                onClick={() => setSelectedPlaylistId(playlist.id)}
-              >
-                {isSelected ? (
-                  <Check className="h-4 w-4 mr-2" />
-                ) : (
-                  <ListMusic className="h-4 w-4 mr-2" />
-                )}
-                <span className="flex-1 truncate">{playlist.name}</span>
-              </div>
+                playlist={playlist}
+                isSelected={isSelected}
+                isLastPlaylist={isLastPlaylist}
+              />
             );
           })}
         </div>
