@@ -19,26 +19,9 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
   
   // Helper to check if a user is currently banned (banned_until is set)
   const isBanned = (profile: Profile) => {
-    // The user_details_view doesn't expose banned_until directly, 
-    // but we can infer a banned state if we had access to the full auth.users object.
-    // For now, we rely on the fact that the ban action is what we control.
-    // Since we cannot read the banned_until field from the view, we will assume 
-    // the admin needs to check the Supabase Auth dashboard for current ban status, 
-    // or we need to update the view to include a 'banned' status if possible.
-    
-    // Since we cannot easily read the banned status from the current view, 
-    // we will assume the action button should always be available, and the 
-    // admin will know the current state. 
-    // For a proper implementation, we would need to query the auth.users table 
-    // or update the view to include the banned status.
-    
-    // For demonstration, let's assume a user is 'banned' if their email starts with 'banned_' 
-    // or similar, but since we are using the official Supabase banned_until field 
-    // in the Edge Function, we must rely on the admin knowing the state or 
-    // refreshing the page after the action.
-    
-    // For now, let's just show the action buttons.
-    return false; // Placeholder: Cannot reliably determine ban status from current view
+    // banned_until is a timestamp. If it's set (not null) and in the future, the user is banned.
+    // Since our Edge Function sets it far in the future, checking for non-null is sufficient.
+    return !!profile.banned_until;
   };
 
   return (
@@ -57,13 +40,8 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
         <TableBody>
           {profiles.map((profile) => {
             const isSelf = profile.id === currentUser?.id;
-            const currentlyBanned = isBanned(profile); // Placeholder check
+            const currentlyBanned = isBanned(profile);
             
-            // Note: We cannot reliably read the banned_until status from the current view.
-            // The action buttons will always show Ban/Unban, and the admin must know the current state.
-            // For a real app, the view should be updated to expose the banned status.
-            
-            // For now, let's assume we want to show the Ban button if they are not an admin themselves.
             const actionButton = (
                 <Button 
                     variant={currentlyBanned ? "secondary" : "destructive"} 
@@ -100,7 +78,6 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
                   )}
                 </TableCell>
                 <TableCell className="text-center">
-                    {/* Placeholder for actual banned status display */}
                     {currentlyBanned ? (
                         <Badge variant="destructive" className="flex items-center justify-center">
                             <Ban className="h-3 w-3 mr-1" /> Banned
