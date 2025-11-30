@@ -11,6 +11,7 @@ import { MusicPlayerProvider } from "./context/MusicPlayerContext";
 import { SidebarProvider } from "./context/SidebarContext";
 import { AuthProvider } from "./integrations/supabase/auth";
 import AdminDashboard from "./pages/AdminDashboard";
+import BannedPage from "./pages/BannedPage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
               <BrowserRouter>
                 <Routes>
                   <Route path="/login" element={<Login />} />
+                  <Route path="/banned" element={<BannedPage />} />
                   
                   {/* Protected Routes */}
                   <Route element={<ProtectedRoute />}>

@@ -14,6 +14,11 @@ const ProtectedRoute: React.FC = () => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+  
+  // Check for ban status and redirect if banned
+  if (user.is_banned) {
+      return <Navigate to="/banned" replace />;
+  }
 
   // Render the Layout component around the Outlet for all protected pages
   return (

@@ -3,9 +3,10 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from './client';
 import { Loader2 } from 'lucide-react';
 
-// Extend the User type to include profile data
+// Extend the User type to include profile data and ban status
 interface AppUser extends User {
   is_admin: boolean;
+  is_banned: boolean; // New field
 }
 
 interface AuthContextType {
@@ -16,21 +17,36 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to check if the user is currently banned
+const checkBanStatus = (bannedUntil: string | null): boolean => {
+    if (!bannedUntil) return false;
+    const banDate = new Date(bannedUntil);
+    // Check if the ban date is in the future
+    return banDate.getTime() > Date.now();
+};
+
 // Helper function to fetch profile data
 const fetchUserProfile = async (user: User): Promise<AppUser> => {
+    // Fetch profile data (is_admin) and banned_until from the view
     const { data, error } = await supabase
-        .from('profiles')
-        .select('is_admin')
+        .from('user_details_view')
+        .select('is_admin, banned_until')
         .eq('id', user.id)
         .single();
 
     if (error) {
         console.error("Error fetching profile:", error);
-        // Return user with default admin status if fetch fails
-        return { ...user, is_admin: false };
+        // Return user with default status if fetch fails
+        return { ...user, is_admin: false, is_banned: false };
     }
     
-    return { ...user, is_admin: data.is_admin };
+    const isBanned = checkBanStatus(data.banned_until);
+    
+    return { 
+        ...user, 
+        is_admin: data.is_admin, 
+        is_banned: isBanned 
+    };
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
