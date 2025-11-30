@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/integrations/supabase/auth';
-import { Track } from '@/context/MusicPlayerContext';
+import { Track, Playlist } from '@/context/MusicPlayerContext';
 
 // Define DB types
 interface DbTrack {
@@ -15,12 +15,12 @@ interface DbTrack {
   order_index: number; // Added for reordering
 }
 
+// Updated DbPlaylist type (metadata only)
 interface DbPlaylist {
   id: string;
   user_id: string;
   name: string;
   created_at: string;
-  tracks: DbTrack[];
 }
 
 // Helper function to transform DB track to context track
@@ -43,73 +43,75 @@ const transformTrackToDb = (track: Omit<Track, 'dbId' | 'orderIndex'>, playlistI
   order_index: orderIndex, // Include order index on insert
 });
 
-// --- Data Fetching ---
+// --- Data Fetching Functions ---
 
-const fetchUserPlaylist = async (userId: string) => {
-  // 1. Try to fetch the user's default playlist (e.g., named 'My Tracks')
-  let { data: playlist, error: playlistError } = await supabase
+const fetchUserPlaylists = async (userId: string): Promise<DbPlaylist[]> => {
+  // 1. Fetch existing playlists
+  let { data: playlists, error } = await supabase
     .from('playlists')
-    .select('*')
+    .select('id, user_id, name, created_at')
     .eq('user_id', userId)
-    .limit(1)
-    .single();
+    .order('created_at', { ascending: true });
 
-  if (playlistError && playlistError.code !== 'PGRST116') { // PGRST116 means 'no rows found'
-    throw playlistError;
-  }
+  if (error) throw error;
 
-  let playlistId: string;
-
-  // 2. If no playlist exists, create one
-  if (!playlist) {
+  // 2. If no playlists exist, create a default one
+  if (!playlists || playlists.length === 0) {
     const { data: newPlaylist, error: insertError } = await supabase
       .from('playlists')
       .insert([{ user_id: userId, name: 'My Tracks' }])
-      .select()
+      .select('id, user_id, name, created_at')
       .single();
 
     if (insertError) throw insertError;
-    playlist = newPlaylist;
+    playlists = [newPlaylist];
   }
   
-  playlistId = playlist.id;
-
-  // 3. Fetch tracks associated with the playlist
-  const { data: tracks, error: tracksError } = await supabase
-    .from('tracks')
-    .select('*')
-    .eq('playlist_id', playlistId)
-    .order('order_index', { ascending: true }); // Order by the new index
-
-  if (tracksError) throw tracksError;
-
-  return {
-    ...playlist,
-    tracks: tracks.map(transformTrack),
-  };
+  return playlists as DbPlaylist[];
 };
 
-export const usePlaylistData = () => {
+const fetchTracksForPlaylist = async (playlistId: string): Promise<Track[]> => {
+    const { data: tracks, error: tracksError } = await supabase
+        .from('tracks')
+        .select('*')
+        .eq('playlist_id', playlistId)
+        .order('order_index', { ascending: true });
+
+    if (tracksError) throw tracksError;
+
+    return tracks.map(transformTrack);
+};
+
+export const usePlaylistData = (selectedPlaylistId: string | null, currentPlaylist: Playlist | null) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const userId = user?.id;
 
-  const playlistQuery = useQuery({
-    queryKey: ['playlist', userId],
-    queryFn: () => fetchUserPlaylist(userId!),
+  // Query 1: Fetch all playlists metadata
+  const playlistsQuery = useQuery({
+    queryKey: ['playlists', userId],
+    queryFn: () => fetchUserPlaylists(userId!),
     enabled: !!userId,
+  });
+  
+  // Query 2: Fetch tracks for the selected playlist
+  const tracksQuery = useQuery({
+    queryKey: ['tracks', selectedPlaylistId],
+    queryFn: () => fetchTracksForPlaylist(selectedPlaylistId!),
+    // Only enable if a playlist is selected
+    enabled: !!selectedPlaylistId, 
   });
   
   // --- Mutations ---
   
   const addTrackMutation = useMutation({
     mutationFn: async (track: Omit<Track, 'dbId' | 'orderIndex'>) => {
-      if (!playlistQuery.data) throw new Error("Playlist data not loaded.");
+      if (!selectedPlaylistId || !currentPlaylist) throw new Error("Playlist not selected or loaded.");
       
-      const playlistId = playlistQuery.data.id;
+      const playlistId = selectedPlaylistId;
       
-      // Determine the next order index (max current index + 1, or 1 if empty)
-      const currentTracks = playlistQuery.data.tracks;
+      // Determine the next order index based on the current state (passed from context)
+      const currentTracks = currentPlaylist.tracks;
       const maxOrderIndex = currentTracks.reduce((max, t) => Math.max(max, t.orderIndex || 0), 0);
       const newOrderIndex = maxOrderIndex + 1;
       
@@ -125,8 +127,7 @@ export const usePlaylistData = () => {
       return data;
     },
     onSuccess: () => {
-      // Invalidate the playlist query to refetch the updated track list
-      queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
+      queryClient.invalidateQueries({ queryKey: ['tracks', selectedPlaylistId] });
     },
   });
   
@@ -141,8 +142,7 @@ export const usePlaylistData = () => {
       return trackDbId;
     },
     onSuccess: () => {
-      // Invalidate the playlist query to refetch the updated track list
-      queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
+      queryClient.invalidateQueries({ queryKey: ['tracks', selectedPlaylistId] });
     },
   });
   
@@ -157,8 +157,7 @@ export const usePlaylistData = () => {
       return playlistId;
     },
     onSuccess: () => {
-      // Invalidate the playlist query to refetch the updated track list
-      queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
+      queryClient.invalidateQueries({ queryKey: ['tracks', selectedPlaylistId] });
     },
   });
   
@@ -181,8 +180,7 @@ export const usePlaylistData = () => {
       return updates;
     },
     onSuccess: () => {
-      // Invalidate the playlist query to refetch the updated track list
-      queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
+      queryClient.invalidateQueries({ queryKey: ['tracks', selectedPlaylistId] });
     },
   });
   
@@ -192,23 +190,48 @@ export const usePlaylistData = () => {
         .from('playlists')
         .update({ name: newName })
         .eq('id', playlistId)
-        .select()
+        .select('id, name')
         .single();
         
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlist', userId] });
+      queryClient.invalidateQueries({ queryKey: ['playlists', userId] });
     },
+  });
+  
+  const createPlaylistMutation = useMutation({
+    mutationFn: async (name: string) => {
+        if (!userId) throw new Error("User not authenticated.");
+        
+        const { data, error } = await supabase
+            .from('playlists')
+            .insert([{ user_id: userId, name: name }])
+            .select('id, name')
+            .single();
+            
+        if (error) throw error;
+        return data;
+    },
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['playlists', userId] });
+    }
   });
 
   return {
-    playlistQuery,
+    playlists: playlistsQuery.data || null,
+    tracks: tracksQuery.data || null,
+    isLoadingPlaylists: playlistsQuery.isLoading,
+    isLoadingTracks: tracksQuery.isLoading,
+    isError: playlistsQuery.isError || tracksQuery.isError,
+    error: playlistsQuery.error || tracksQuery.error,
+    
     addTrackMutation,
     deleteTrackMutation,
     deleteAllTracksMutation,
     updateTrackOrderMutation,
     updatePlaylistNameMutation,
+    createPlaylistMutation,
   };
 };

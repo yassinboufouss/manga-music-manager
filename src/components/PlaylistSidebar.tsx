@@ -1,9 +1,8 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { ListMusic, Play, Loader2 } from 'lucide-react';
+import { ListMusic, Loader2 } from 'lucide-react';
 import { useMusicPlayer, Track } from '@/context/MusicPlayerContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useSidebar } from '@/context/SidebarContext';
 import AddTrackDialog from './AddTrackDialog';
 import SortableTrackItem from './SortableTrackItem';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
@@ -12,19 +11,24 @@ import { reorderArray } from '@/lib/dnd-utils';
 import RenamePlaylistDialog from './RenamePlaylistDialog';
 import ClearPlaylistDialog from './ClearPlaylistDialog';
 import LogoutButton from './LogoutButton';
+import PlaylistSelector from './PlaylistSelector';
 
 const PlaylistSidebar = () => {
-  const { currentPlaylist, currentTrack, isLoadingData, updateTrackOrder } = useMusicPlayer();
+  const { currentPlaylist, currentTrack, isLoadingData, updateTrackOrder, selectedPlaylistId } = useMusicPlayer();
   
   // Local state for optimistic UI updates during drag
   const [tracks, setTracks] = useState<Track[]>(currentPlaylist?.tracks || []);
   
-  // Sync local state when playlist data changes (after fetch/mutation)
+  // Sync local state when playlist data changes (after fetch/mutation or playlist switch)
   useEffect(() => {
+    // Only update local tracks if the currentPlaylist is loaded and tracks are different
     if (currentPlaylist?.tracks) {
       setTracks(currentPlaylist.tracks);
+    } else if (selectedPlaylistId && !currentPlaylist) {
+      // If a playlist is selected but tracks haven't loaded yet (or it's empty), clear local tracks
+      setTracks([]);
     }
-  }, [currentPlaylist?.tracks]);
+  }, [currentPlaylist, selectedPlaylistId]);
 
   // Ref for the ScrollArea container
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -79,7 +83,7 @@ const PlaylistSidebar = () => {
     }
   };
   
-  if (isLoadingData) {
+  if (isLoadingData && !currentPlaylist) {
       return (
           <div className="w-full h-full flex flex-col items-center justify-center bg-background text-foreground p-4 border-r border-border">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -88,11 +92,12 @@ const PlaylistSidebar = () => {
       );
   }
   
-  if (!currentPlaylist) {
+  if (!selectedPlaylistId) {
+      // This state should ideally be brief, handled by the context initializing the first playlist
       return (
           <div className="w-full h-full flex flex-col bg-background text-foreground p-4 border-r border-border">
               <h2 className="text-2xl font-bold mb-6 text-primary">Dyad Music</h2>
-              <p className="text-sm text-muted-foreground">Please log in to view your playlist.</p>
+              <PlaylistSelector />
           </div>
       );
   }
@@ -104,14 +109,17 @@ const PlaylistSidebar = () => {
       <h2 className="text-2xl font-bold mb-6 text-primary">Dyad Music</h2>
       
       <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2 text-foreground">Playlists</h3>
-        <div className="flex items-center p-3 rounded-lg bg-secondary text-secondary-foreground font-medium">
-            <span className="flex-1 truncate">{currentPlaylist.name}</span>
-            <RenamePlaylistDialog />
-        </div>
+        <PlaylistSelector />
       </div>
       
-      <div className="mb-4">
+      {/* Current Playlist Info and Actions */}
+      <div className="mb-4 pt-4 border-t border-border">
+        <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-foreground truncate">
+                {currentPlaylist?.name || "Loading Playlist..."}
+            </h3>
+            {currentPlaylist && <RenamePlaylistDialog />}
+        </div>
         <AddTrackDialog />
       </div>
 
@@ -134,8 +142,14 @@ const PlaylistSidebar = () => {
                   ref={(el) => setTrackRef(track.dbId!, el)}
                 />
               ))}
-              {tracks.length === 0 && (
+              {tracks.length === 0 && !isLoadingData && (
                   <p className="text-sm text-muted-foreground p-3">No tracks found. Add one above!</p>
+              )}
+              {isLoadingData && tracks.length === 0 && (
+                  <div className="flex items-center justify-center p-3">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary mr-2" />
+                      <span className="text-sm text-muted-foreground">Loading tracks...</span>
+                  </div>
               )}
             </div>
           </SortableContext>
