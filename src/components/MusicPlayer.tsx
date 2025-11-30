@@ -18,7 +18,7 @@ const MusicPlayer = () => {
   // State for progress
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
-  const intervalRef = useRef<number | null>(intervalRef.current);
+  const intervalRef = useRef<number | null>(null); // Fixed initialization
   
   // State for loading/buffering
   const [isLoading, setIsLoading] = React.useState(false);
