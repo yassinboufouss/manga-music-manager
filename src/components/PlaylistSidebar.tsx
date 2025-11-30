@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { ListMusic, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useMusicPlayer, Track } from '@/context/MusicPlayerContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,9 +8,7 @@ import SortableTrackItem from './SortableTrackItem';
 import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { reorderArray } from '@/lib/dnd-utils';
-import RenamePlaylistDialog from './RenamePlaylistDialog';
 import ClearPlaylistDialog from './ClearPlaylistDialog';
-import LogoutButton from './LogoutButton';
 import PlaylistSelector from './PlaylistSelector';
 import PlaylistHeaderActions from './PlaylistHeaderActions';
 
@@ -106,8 +104,7 @@ const PlaylistSidebar = () => {
   const sortableIds = tracks.map(t => t.dbId!);
 
   return (
-    <div className="w-full h-full flex flex-col bg-background text-foreground p-4 border-r border-border">
-      <h2 className="text-2xl font-bold mb-6 text-primary">Dyad Music</h2>
+    <div className="w-full h-full flex flex-col bg-background text-foreground p-4">
       
       <div className="mb-4">
         <PlaylistSelector />
@@ -159,7 +156,6 @@ const PlaylistSidebar = () => {
       
       <div className="mt-4 pt-4 border-t border-border space-y-2">
         <ClearPlaylistDialog />
-        <LogoutButton />
       </div>
     </div>
   );
