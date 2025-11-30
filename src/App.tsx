@@ -10,6 +10,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import { MusicPlayerProvider } from "./context/MusicPlayerContext";
 import { SidebarProvider } from "./context/SidebarContext";
 import { AuthProvider } from "./integrations/supabase/auth";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
                   {/* Protected Routes */}
                   <Route element={<ProtectedRoute />}>
                     <Route path="/" element={<Index />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
                   </Route>
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

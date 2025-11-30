@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -7,11 +7,14 @@ import { useAuth } from '@/integrations/supabase/auth';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import LogoutButton from './LogoutButton';
+import { useAdmin } from '@/hooks/use-admin';
+import { Link } from 'react-router-dom';
 
 const Header: React.FC = () => {
   const { toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const isAdmin = useAdmin();
   
   const userInitials = user?.email ? user.email.substring(0, 2).toUpperCase() : 'U';
 
@@ -50,6 +53,19 @@ const Header: React.FC = () => {
               </p>
             </div>
           </DropdownMenuLabel>
+          
+          {isAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/admin" className="flex items-center w-full">
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin Dashboard
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
+          
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <LogoutButton />
