@@ -21,10 +21,19 @@ export const useYoutubeMetadata = () => {
     isLoading: false,
     error: null,
   });
+  
+  const resetMetadata = useCallback(() => {
+    setState({
+      data: null,
+      isLoading: false,
+      error: null,
+    });
+  }, []);
 
   const fetchMetadata = useCallback(async (youtubeId: string) => {
     if (!youtubeId || youtubeId.length !== 11) {
-      setState({ data: null, isLoading: false, error: null });
+      // If input is invalid, reset state and return early
+      resetMetadata();
       return;
     }
     
@@ -59,10 +68,11 @@ export const useYoutubeMetadata = () => {
       });
       return null;
     }
-  }, []);
+  }, [resetMetadata]);
 
   return {
     ...state,
     fetchMetadata,
+    resetMetadata,
   };
 };

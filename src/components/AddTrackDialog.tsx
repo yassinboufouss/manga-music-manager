@@ -40,7 +40,7 @@ const extractYoutubeId = (urlOrId: string): string | null => {
 
 const AddTrackDialog: React.FC = () => {
   const { addTrackToPlaylist } = useMusicPlayer();
-  const { data: metadata, isLoading: isFetchingMetadata, error: metadataError, fetchMetadata } = useYoutubeMetadata();
+  const { data: metadata, isLoading: isFetchingMetadata, error: metadataError, fetchMetadata, resetMetadata } = useYoutubeMetadata();
   const [open, setOpen] = useState(false);
   
   // Ref to prevent duplicate submissions when metadata is fetched repeatedly due to re-renders
@@ -69,16 +69,17 @@ const AddTrackDialog: React.FC = () => {
     try {
       await addTrackToPlaylist(trackData);
       
-      // Success: Clear the ref and close
+      // Success: Clear the ref, reset form, reset metadata state, and close
       lastProcessedIdRef.current = null;
       form.reset();
+      resetMetadata(); // <-- Reset metadata state
       setOpen(false);
     } catch (error) {
       // Failure: Clear the ref to allow manual retry if the user fixes the input/error
       lastProcessedIdRef.current = null;
       console.error(error);
     }
-  }, [addTrackToPlaylist, form]);
+  }, [addTrackToPlaylist, form, resetMetadata]);
 
 
   // Effect to fetch metadata when a valid ID is present
@@ -123,15 +124,26 @@ const AddTrackDialog: React.FC = () => {
           showError(`Metadata fetch failed: ${metadataError}`);
           // If fetch fails, clear the ref to allow retry
           lastProcessedIdRef.current = null;
+          // Also reset the form fields that would have been populated by metadata
+          form.setValue("title", "");
+          form.setValue("artist", "");
+          form.setValue("duration", "0:00");
       }
-  }, [metadataError]);
+  }, [metadataError, form]);
   
-  // Effect to reset the processed ID when the dialog closes
+  // Effect to reset the processed ID and metadata when the dialog closes
   useEffect(() => {
       if (!open) {
           lastProcessedIdRef.current = null;
+          resetMetadata(); // <-- Reset metadata state on close
+          form.reset({ // Reset form fields to default on close
+              youtubeId: "",
+              title: "",
+              artist: "",
+              duration: "0:00",
+          });
       }
-  }, [open]);
+  }, [open, resetMetadata, form]);
 
 
   const handleIdInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
