@@ -11,6 +11,7 @@ import { useAuth } from '@/integrations/supabase/auth';
 import AvatarUpload from './AvatarUpload';
 import UpdateEmailDialog from './UpdateEmailDialog';
 import UpdatePasswordDialog from './UpdatePasswordDialog';
+import DeleteAccountDialog from './DeleteAccountDialog'; // Import new component
 
 const ProfileForm: React.FC = () => {
   const { profile, isLoading, isUpdating, updateProfile } = useProfile();
@@ -113,6 +114,15 @@ const ProfileForm: React.FC = () => {
           )}
           {isUpdating ? "Saving..." : "Save Changes"}
         </Button>
+        
+        {/* Account Deletion Section */}
+        <div className="pt-6 border-t border-border mt-6">
+            <h3 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+                Permanently delete your account and all associated data.
+            </p>
+            <DeleteAccountDialog />
+        </div>
       </form>
     </Form>
   );
