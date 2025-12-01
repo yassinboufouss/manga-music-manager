@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -11,11 +11,14 @@ import { useAuth } from '@/integrations/supabase/auth';
 import AvatarUpload from './AvatarUpload';
 import UpdateEmailDialog from './UpdateEmailDialog';
 import UpdatePasswordDialog from './UpdatePasswordDialog';
-import DeleteAccountDialog from './DeleteAccountDialog'; // Import new component
+import DeleteAccountDialog from './DeleteAccountDialog';
+import { Link } from 'react-router-dom'; // Import Link
+import { usePremium } from '@/hooks/use-premium'; // Import usePremium
 
 const ProfileForm: React.FC = () => {
   const { profile, isLoading, isUpdating, updateProfile } = useProfile();
   const { user } = useAuth();
+  const isPremium = usePremium(); // Get premium status
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(ProfileSchema),
@@ -64,8 +67,25 @@ const ProfileForm: React.FC = () => {
         
         <AvatarUpload />
         
+        {/* Subscription Status */}
+        <div className="space-y-2 pt-2 border-t border-border">
+            <FormLabel>Subscription</FormLabel>
+            <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                    Status: <span className={isPremium ? "text-primary" : "text-muted-foreground"}>
+                        {isPremium ? "Premium" : "Standard"}
+                    </span>
+                </span>
+                <Button variant="outline" size="sm" asChild>
+                    <Link to="/upgrade">
+                        <Zap className="mr-2 h-4 w-4" /> {isPremium ? "Manage" : "Upgrade"}
+                    </Link>
+                </Button>
+            </div>
+        </div>
+        
         {/* Email Display and Update Button */}
-        <div className="space-y-2">
+        <div className="space-y-2 pt-4 border-t border-border">
             <FormLabel>Email</FormLabel>
             <Input value={user?.email || "N/A"} disabled className="bg-muted/50" />
             <UpdateEmailDialog />

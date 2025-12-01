@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Shield, User } from 'lucide-react';
+import { Menu, Shield, User, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -9,12 +9,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import LogoutButton from './LogoutButton';
 import { useAdmin } from '@/hooks/use-admin';
 import { Link } from 'react-router-dom';
+import { usePremium } from '@/hooks/use-premium'; // Import usePremium
 
 const Header: React.FC = () => {
   const { toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const isAdmin = useAdmin();
+  const isPremium = usePremium(); // Get premium status
   
   const userInitials = user?.email ? user.email.substring(0, 2).toUpperCase() : 'U';
 
@@ -55,6 +57,17 @@ const Header: React.FC = () => {
           </DropdownMenuLabel>
           
           <DropdownMenuSeparator />
+          
+          {/* Upgrade Link */}
+          <DropdownMenuItem asChild>
+            <Link to="/upgrade" className="flex items-center w-full text-primary font-medium">
+              <Zap className="mr-2 h-4 w-4" />
+              {isPremium ? "Manage Subscription" : "Upgrade to Premium"}
+            </Link>
+          </DropdownMenuItem>
+          
+          <DropdownMenuSeparator />
+          
           <DropdownMenuItem asChild>
             <Link to="/profile" className="flex items-center w-full">
               <User className="mr-2 h-4 w-4" />

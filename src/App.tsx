@@ -14,6 +14,7 @@ import { AuthProvider } from "./integrations/supabase/auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import BannedPage from "./pages/BannedPage";
 import ProfilePage from "./pages/ProfilePage";
+import UpgradePage from "./pages/UpgradePage"; // Import new page
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
                     <Route path="/app" element={<AppIndex />} /> {/* Main app content moved to /app */}
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/upgrade" element={<UpgradePage />} /> {/* New Upgrade Route */}
                   </Route>
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
