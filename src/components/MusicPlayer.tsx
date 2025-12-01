@@ -287,7 +287,7 @@ const MusicPlayer = () => {
       </div>
 
       {/* Track Info (Left) */}
-      <div className="flex items-center w-1/3 sm:w-1/4 min-w-[150px] max-w-[30%] sm:max-w-none">
+      <div className="flex items-center w-[25%] sm:w-1/4 min-w-[100px] max-w-[25%] sm:max-w-none">
         <img 
           src={`https://img.youtube.com/vi/${currentTrack.id}/mqdefault.jpg`} 
           alt={currentTrack.title} 
@@ -300,7 +300,7 @@ const MusicPlayer = () => {
       </div>
 
       {/* Controls and Progress (Center) */}
-      <div className="flex flex-col items-center w-1/3 sm:w-1/2 max-w-xs sm:max-w-lg mx-2">
+      <div className="flex flex-col items-center w-[50%] sm:w-1/2 max-w-xs sm:max-w-lg mx-2">
         <div className="flex space-x-2 sm:space-x-4 mb-1 items-center">
           
           {/* Shuffle Button (New) */}
@@ -387,7 +387,7 @@ const MusicPlayer = () => {
       </div>
 
       {/* Volume Control, Playback Rate, and Lyrics (Right) */}
-      <div className="flex items-center w-1/3 sm:w-1/4 justify-end space-x-2 sm:space-x-4 min-w-[100px] max-w-[30%] sm:max-w-none">
+      <div className="flex items-center w-[25%] sm:w-1/4 justify-end space-x-2 sm:space-x-4 min-w-[80px] max-w-[25%] sm:max-w-none">
         
         {/* YouTube Link Button (New) */}
         <Button 
