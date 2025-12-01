@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -11,6 +11,8 @@ import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { showError, showSuccess } from '@/utils/toast';
 import { useYoutubeMetadata } from '@/hooks/use-youtube-metadata';
 import { cn } from '@/lib/utils';
+import { useCooldown } from '@/hooks/use-cooldown'; // Import the new hook
+import { formatTime } from '@/utils/time'; // Import formatTime
 
 // Utility function to extract YouTube ID from various URL formats
 const extractYoutubeId = (urlOrId: string): string | null => {
@@ -43,6 +45,9 @@ const AddTrackDialog: React.FC = () => {
   const { data: metadata, isLoading: isFetchingMetadata, error: metadataError, fetchMetadata, resetMetadata } = useYoutubeMetadata();
   const [open, setOpen] = useState(false);
   
+  // Cooldown setup (30 seconds)
+  const { isCooldownActive, remainingTime, startCooldown } = useCooldown(30);
+  
   // Ref to prevent duplicate submissions when metadata is fetched repeatedly due to re-renders
   const lastProcessedIdRef = useRef<string | null>(null); 
 
@@ -69,17 +74,20 @@ const AddTrackDialog: React.FC = () => {
     try {
       await addTrackToPlaylist(trackData);
       
-      // Success: Clear the ref, reset form, reset metadata state, and close
+      // Success: Start cooldown
+      startCooldown();
+      
+      // Clear the ref, reset form, reset metadata state, and close
       lastProcessedIdRef.current = null;
       form.reset();
-      resetMetadata(); // <-- Reset metadata state
+      resetMetadata(); 
       setOpen(false);
     } catch (error) {
       // Failure: Clear the ref to allow manual retry if the user fixes the input/error
       lastProcessedIdRef.current = null;
       console.error(error);
     }
-  }, [addTrackToPlaylist, form, resetMetadata]);
+  }, [addTrackToPlaylist, form, resetMetadata, startCooldown]);
 
 
   // Effect to fetch metadata when a valid ID is present
@@ -157,12 +165,24 @@ const AddTrackDialog: React.FC = () => {
     }
   }, [form]);
 
+  const cooldownButtonText = isCooldownActive 
+    ? `Cooldown: ${formatTime(remainingTime)}` 
+    : "Add New Track";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary" className="w-full justify-start">
-          <Plus className="mr-2 h-4 w-4" /> Add New Track
+        <Button 
+          variant="secondary" 
+          className="w-full justify-start"
+          disabled={isCooldownActive}
+        >
+          {isCooldownActive ? (
+            <Clock className="mr-2 h-4 w-4 animate-pulse" />
+          ) : (
+            <Plus className="mr-2 h-4 w-4" />
+          )}
+          {cooldownButtonText}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -245,7 +265,7 @@ const AddTrackDialog: React.FC = () => {
             <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={form.formState.isSubmitting || isFetchingMetadata || !metadata}
+                disabled={form.formState.isSubmitting || isFetchingMetadata || !metadata || isCooldownActive}
             >
               {form.formState.isSubmitting ? "Adding..." : "Add Track"}
             </Button>
