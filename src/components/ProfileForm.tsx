@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ProfileSchema, ProfileFormValues } from '@/lib/schemas';
 import { useProfile } from '@/hooks/use-profile';
 import { useAuth } from '@/integrations/supabase/auth';
+import AvatarUpload from './AvatarUpload';
 
 const ProfileForm: React.FC = () => {
   const { profile, isLoading, isUpdating, updateProfile } = useProfile();
@@ -57,6 +58,8 @@ const ProfileForm: React.FC = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        
+        <AvatarUpload />
         
         <div className="space-y-2">
             <FormLabel>Email</FormLabel>
