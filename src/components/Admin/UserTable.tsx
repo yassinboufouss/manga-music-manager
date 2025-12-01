@@ -6,15 +6,17 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAdminActions } from '@/hooks/use-admin-actions';
+import { useAdminUserPremiumToggle } from '@/hooks/use-admin-user-premium-toggle';
 import { useAuth } from '@/integrations/supabase/auth';
-import { Ban, CheckCircle, Loader2 } from 'lucide-react';
+import { Ban, CheckCircle, Loader2, Zap } from 'lucide-react';
 
 interface UserTableProps {
   profiles: Profile[];
 }
 
 const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
-  const { banUser, unbanUser, isPending, pendingTargetId } = useAdminActions();
+  const { banUser, unbanUser, isPending: isBanPending, pendingTargetId: pendingBanTargetId } = useAdminActions();
+  const { togglePremium, isPending: isPremiumTogglePending, pendingTargetId: pendingPremiumTargetId } = useAdminUserPremiumToggle();
   const { user: currentUser } = useAuth();
   
   // Helper to check if a user is currently banned (banned_until is set)
@@ -33,6 +35,7 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
             <TableHead>Name</TableHead>
             <TableHead>Email / ID</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Premium</TableHead>
             <TableHead>Joined Date</TableHead>
             <TableHead className="text-center">Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -42,17 +45,31 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
           {profiles.map((profile) => {
             const isSelf = profile.id === currentUser?.id;
             const currentlyBanned = isBanned(profile);
-            const isProcessing = isPending && pendingTargetId === profile.id;
+            const isBanProcessing = isBanPending && pendingBanTargetId === profile.id;
+            const isPremiumProcessing = isPremiumTogglePending && pendingPremiumTargetId === profile.id;
             
-            const actionButton = (
+            const banActionButton = (
                 <Button 
                     variant={currentlyBanned ? "secondary" : "destructive"} 
                     size="sm"
                     onClick={() => currentlyBanned ? unbanUser(profile.id) : banUser(profile.id)}
-                    disabled={isSelf || isProcessing}
+                    disabled={isSelf || isBanProcessing || isPremiumProcessing}
                 >
-                    {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    {isBanProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                     {currentlyBanned ? "Unban" : "Ban"}
+                </Button>
+            );
+            
+            const premiumActionButton = (
+                <Button 
+                    variant={profile.is_premium ? "outline" : "default"} 
+                    size="sm"
+                    onClick={() => togglePremium({ userId: profile.id, currentStatus: profile.is_premium })}
+                    disabled={isSelf || isBanProcessing || isPremiumProcessing}
+                    className={profile.is_premium ? "text-primary border-primary/50" : ""}
+                >
+                    {isPremiumProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    {profile.is_premium ? "Downgrade" : "Grant Premium"}
                 </Button>
             );
 
@@ -80,6 +97,15 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
                   )}
                 </TableCell>
                 <TableCell>
+                    {profile.is_premium ? (
+                        <Badge className="bg-primary hover:bg-primary/90 flex items-center justify-center">
+                            <Zap className="h-3 w-3 mr-1" /> Premium
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline">Standard</Badge>
+                    )}
+                </TableCell>
+                <TableCell>
                   {format(new Date(profile.created_at), 'MMM d, yyyy')}
                 </TableCell>
                 <TableCell className="text-center">
@@ -97,7 +123,10 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
                     {isSelf ? (
                         <Badge variant="outline">Current User</Badge>
                     ) : (
-                        actionButton
+                        <>
+                            {premiumActionButton}
+                            {banActionButton}
+                        </>
                     )}
                 </TableCell>
               </TableRow>
