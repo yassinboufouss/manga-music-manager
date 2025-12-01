@@ -99,3 +99,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Scrollbar Styles for Webkit browsers (Chrome, Safari) */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted));
+  border-radius: 4px;
+  border: 2px solid hsl(var(--background));
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
+}
+
+/* Custom Scrollbar Styles for Firefox */
+.dark {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted)) hsl(var(--background));
+}
