@@ -1,6 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import YouTube, { YouTubePlayer } from 'react-youtube';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, Repeat, ListMusic, Youtube } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, Repeat, ListMusic, Youtube, Shuffle } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -28,8 +28,11 @@ const MusicPlayer = () => {
     setIsAutoplayEnabled,
     playNext,
     playPrevious,
-    playbackRate, // New
-    setPlaybackRate, // New
+    playbackRate,
+    setPlaybackRate,
+    shufflePlaylist, // New
+    isShuffling, // New
+    setIsShuffling, // New
   } = useMusicPlayer();
   
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -214,6 +217,12 @@ const MusicPlayer = () => {
   const handleRateChange = (value: string) => {
       setPlaybackRate(parseFloat(value));
   };
+  
+  const handleShuffle = async () => {
+      setIsShuffling(true);
+      await shufflePlaylist();
+      setIsShuffling(false);
+  };
 
   if (isLoadingData) {
     return (
@@ -263,6 +272,25 @@ const MusicPlayer = () => {
       {/* Controls and Progress (Center) */}
       <div className="flex flex-col items-center w-1/3 sm:w-1/2 max-w-xs sm:max-w-lg mx-2">
         <div className="flex space-x-2 sm:space-x-4 mb-1 items-center">
+          
+          {/* Shuffle Button (New) */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleShuffle} 
+            className={cn(
+                "h-7 w-7 sm:h-8 sm:w-8 text-foreground hover:text-primary",
+                isShuffling && "animate-pulse"
+            )}
+            disabled={isShuffling || (currentPlaylist?.tracks.length || 0) < 2}
+            aria-label="Shuffle Playlist"
+          >
+            {isShuffling ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+                <Shuffle className="h-4 w-4" />
+            )}
+          </Button>
           
           {/* Loop Toggle (Hidden on small mobile) */}
           <Toggle 

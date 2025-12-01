@@ -50,9 +50,24 @@ interface MusicPlayerContextType {
   // New: Playback Rate
   playbackRate: number;
   setPlaybackRate: React.Dispatch<React.SetStateAction<number>>;
+
+  // New: Shuffle
+  isShuffling: boolean;
+  setIsShuffling: React.Dispatch<React.SetStateAction<boolean>>;
+  shufflePlaylist: () => Promise<void>;
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
+
+// Helper function to shuffle an array (Fisher-Yates algorithm)
+function shuffleArray<T>(array: T[]): T[] {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+}
 
 // 3. Provider Component
 interface MusicPlayerProviderProps {
@@ -65,7 +80,8 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLooping, setIsLooping] = useState(false);
   const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(true);
-  const [playbackRate, setPlaybackRate] = useState(1); // New state: default to 1x speed
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isShuffling, setIsShuffling] = useState(false); // New state
   
   // We need a temporary state for currentPlaylist to pass to the hook for mutations
   const [currentPlaylistState, setCurrentPlaylistState] = useState<Playlist | null>(null);
@@ -80,10 +96,10 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
       addTrackMutation, 
       deleteTrackMutation, 
       deleteAllTracksMutation, 
-      updateTrackOrderMutation,
+      updateTrackOrderMutation, 
       createPlaylistMutation,
       deletePlaylistMutation,
-  } = usePlaylistData(selectedPlaylistId, currentPlaylistState); // Pass selected ID and current state to hook
+  } = usePlaylistData(selectedPlaylistId, currentPlaylistState);
   
   const isLoadingData = isLoadingPlaylists || isLoadingTracks;
   
@@ -271,6 +287,29 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
           throw error;
       }
   }
+  
+  const shufflePlaylist = async () => {
+      if (!currentPlaylist || currentPlaylist.tracks.length < 2) {
+          showError("Cannot shuffle: Playlist is empty or too short.");
+          return;
+      }
+      
+      const shuffledTracks = shuffleArray(currentPlaylist.tracks);
+      
+      try {
+          // Update the database order
+          await updateTrackOrder(shuffledTracks);
+          showSuccess("Playlist shuffled!");
+          
+          // Start playing the new first track
+          if (shuffledTracks.length > 0) {
+              setCurrentTrack(shuffledTracks[0]);
+              setIsPlaying(true);
+          }
+      } catch (error) {
+          // Error handling is inside updateTrackOrder
+      }
+  }
 
   const value = {
     playlists: playlists || null,
@@ -301,6 +340,11 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
     // New: Playback Rate
     playbackRate,
     setPlaybackRate,
+    
+    // New: Shuffle
+    isShuffling,
+    setIsShuffling,
+    shufflePlaylist,
   };
   
   if (isError) {
