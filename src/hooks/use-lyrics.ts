@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { usePremium } from './use-premium';
 
 interface LyricsData {
   title: string;
@@ -27,12 +28,14 @@ const fetchLyrics = async (title: string, artist: string): Promise<LyricsData> =
 };
 
 export const useLyrics = (title: string | null, artist: string | null) => {
+  const isPremium = usePremium();
+
   const query = useQuery({
     queryKey: ['lyrics', title, artist],
     queryFn: () => fetchLyrics(title!, artist!),
-    enabled: !!title && !!artist,
+    enabled: !!title && !!artist && isPremium, // Only enable if premium
     staleTime: Infinity, // Lyrics don't change often
   });
 
-  return query;
+  return { ...query, isPremium };
 };

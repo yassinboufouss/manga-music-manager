@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Mic, Loader2, AlertTriangle } from 'lucide-react';
+import { Mic, Loader2, AlertTriangle, Zap } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { useLyrics } from '@/hooks/use-lyrics';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Link } from 'react-router-dom';
 
 const LyricsSheet: React.FC = () => {
   const { currentTrack } = useMusicPlayer();
@@ -13,19 +14,37 @@ const LyricsSheet: React.FC = () => {
   const title = currentTrack?.title || null;
   const artist = currentTrack?.artist || null;
   
-  const { data: lyricsData, isLoading, isError, error, refetch } = useLyrics(title, artist);
+  const { data: lyricsData, isLoading, isError, error, refetch, isPremium } = useLyrics(title, artist);
   
   // Refetch when sheet opens if data is stale or missing
   useEffect(() => {
-      if (open && !lyricsData && title && artist) {
+      // Only refetch if premium and conditions met
+      if (open && isPremium && !lyricsData && title && artist) {
           refetch();
       }
-  }, [open, lyricsData, title, artist, refetch]);
+  }, [open, lyricsData, title, artist, refetch, isPremium]);
 
   const renderContent = () => {
     if (!currentTrack) {
         return <p className="text-muted-foreground text-center p-4">Select a track to view lyrics.</p>;
     }
+    
+    // --- Premium Check ---
+    if (!isPremium) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                <Zap className="h-10 w-10 text-primary" />
+                <p className="mt-4 text-xl font-semibold text-white">Lyrics are a Premium Feature</p>
+                <p className="text-muted-foreground mt-2">Upgrade your account to unlock real-time lyrics for all your tracks.</p>
+                <Button asChild className="mt-6">
+                    <Link to="/upgrade">
+                        <Zap className="h-4 w-4 mr-2" /> Go Premium
+                    </Link>
+                </Button>
+            </div>
+        );
+    }
+    // --- End Premium Check ---
     
     if (isLoading) {
       return (
