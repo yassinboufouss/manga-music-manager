@@ -8,6 +8,7 @@ import { useMediaShortcuts } from '@/hooks/use-media-shortcuts';
 import PlaybackControls from './player/PlaybackControls';
 import ProgressSlider from './player/ProgressSlider';
 import RightControls from './player/RightControls';
+import { usePremium } from '@/hooks/use-premium'; // Import usePremium
 
 const MusicPlayer = () => {
   const { 
@@ -27,6 +28,8 @@ const MusicPlayer = () => {
     isShuffling, 
     setIsShuffling,
   } = useMusicPlayer();
+  
+  const isPremium = usePremium(); // Get premium status
   
   const playerRef = useRef<YouTubePlayer | null>(null);
   const [volume, setVolume] = React.useState(50);
@@ -99,6 +102,13 @@ const MusicPlayer = () => {
         setIsMuted(true);
     }
   }, [isMuted]);
+  
+  const handleRateChange = useCallback((value: string) => {
+    const newRate = parseFloat(value);
+    if (!isNaN(newRate)) {
+        setPlaybackRate(newRate);
+    }
+  }, [setPlaybackRate]);
 
   // Integrate keyboard shortcuts
   useMediaShortcuts({ 
@@ -237,12 +247,12 @@ const MusicPlayer = () => {
       setIsAutoplayEnabled(prev => !prev);
   };
   
-  const handleRateChange = (value: string) => {
-      setPlaybackRate(parseFloat(value));
-  };
-  
   // Handle shuffle toggle (now just toggles the persistent state)
   const handleShuffleToggle = () => {
+      if (!isPremium) {
+          showError("Shuffle is a premium feature. Upgrade to unlock!");
+          return;
+      }
       if ((currentPlaylist?.tracks.length || 0) < 2) {
           showError("Cannot shuffle: Playlist is empty or too short.");
           return;
@@ -307,6 +317,7 @@ const MusicPlayer = () => {
             isAutoplayEnabled={isAutoplayEnabled}
             isShuffling={isShuffling}
             isPlaylistShort={isPlaylistShort}
+            isPremium={isPremium} // Pass premium status
             togglePlayPause={togglePlayPause}
             playNext={playNext}
             playPrevious={playPrevious}

@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 interface AppUser extends User {
   is_admin: boolean;
   is_banned: boolean; // New field
+  is_premium: boolean; // New premium field
 }
 
 interface AuthContextType {
@@ -27,17 +28,17 @@ const checkBanStatus = (bannedUntil: string | null): boolean => {
 
 // Helper function to fetch profile data
 const fetchUserProfile = async (user: User): Promise<AppUser> => {
-    // Fetch profile data (is_admin) and banned_until from the view
+    // Fetch profile data (is_admin, is_premium) and banned_until from the view
     const { data, error } = await supabase
         .from('user_details_view')
-        .select('is_admin, banned_until')
+        .select('is_admin, is_premium, banned_until')
         .eq('id', user.id)
         .single();
 
     if (error) {
         console.error("Error fetching profile:", error);
         // Return user with default status if fetch fails
-        return { ...user, is_admin: false, is_banned: false };
+        return { ...user, is_admin: false, is_banned: false, is_premium: false };
     }
     
     const isBanned = checkBanStatus(data.banned_until);
@@ -45,7 +46,8 @@ const fetchUserProfile = async (user: User): Promise<AppUser> => {
     return { 
         ...user, 
         is_admin: data.is_admin, 
-        is_banned: isBanned 
+        is_banned: isBanned,
+        is_premium: data.is_premium, // Assign premium status
     };
 };
 

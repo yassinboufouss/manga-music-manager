@@ -11,12 +11,13 @@ interface PlaybackControlsProps {
   isAutoplayEnabled: boolean;
   isShuffling: boolean;
   isPlaylistShort: boolean;
+  isPremium: boolean; // New prop
   togglePlayPause: () => void;
   playNext: () => void;
   playPrevious: () => void;
   handleLoopToggle: () => void;
   handleAutoplayToggle: () => void;
-  handleShuffle: () => void; // Changed signature: no longer async/Promise<void>
+  handleShuffle: () => void;
 }
 
 const PlaybackControls: React.FC<PlaybackControlsProps> = ({
@@ -26,6 +27,7 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   isAutoplayEnabled,
   isShuffling,
   isPlaylistShort,
+  isPremium, // Use new prop
   togglePlayPause,
   playNext,
   playPrevious,
@@ -33,6 +35,8 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   handleAutoplayToggle,
   handleShuffle,
 }) => {
+  const isShuffleDisabled = isPlaylistShort || !isPremium;
+  
   return (
     <div className="flex space-x-2 sm:space-x-4 mb-1 items-center">
       
@@ -43,9 +47,9 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         onClick={handleShuffle} 
         className={cn(
             "h-7 w-7 sm:h-8 sm:w-8 text-foreground hover:text-primary",
-            isShuffling && "text-primary hover:text-primary/80" // Highlight if shuffle mode is active
+            isShuffling && "text-primary hover:text-primary/80"
         )}
-        disabled={isPlaylistShort}
+        disabled={isShuffleDisabled} // Disable if playlist is short OR not premium
         aria-label="Toggle Shuffle Mode"
       >
         <Shuffle className="h-4 w-4" />
