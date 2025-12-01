@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Shield, User, Zap } from 'lucide-react';
+import { Menu, Shield, User, Zap, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -8,15 +8,20 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import LogoutButton from './LogoutButton';
 import { useAdmin } from '@/hooks/use-admin';
-import { Link } from 'react-router-dom';
-import { usePremium } from '@/hooks/use-premium'; // Import usePremium
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { usePremium } from '@/hooks/use-premium';
 
 const Header: React.FC = () => {
   const { toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
   const { user } = useAuth();
   const isAdmin = useAdmin();
-  const isPremium = usePremium(); // Get premium status
+  const isPremium = usePremium();
+  
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const isAppIndex = location.pathname === '/app';
   
   const userInitials = user?.email ? user.email.substring(0, 2).toUpperCase() : 'U';
 
@@ -24,11 +29,26 @@ const Header: React.FC = () => {
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-background/90 backdrop-blur-sm border-b border-border">
       
       <div className="flex items-center space-x-4">
+        {/* Sidebar Toggle (Mobile only) */}
         {isMobile && (
           <Button variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle Sidebar" className="text-white">
             <Menu className="h-5 w-5" />
           </Button>
         )}
+        
+        {/* Back Button (Show if not on the main app index) */}
+        {!isAppIndex && (
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate(-1)} 
+                aria-label="Go Back" 
+                className="text-white"
+            >
+                <ChevronLeft className="h-5 w-5" />
+            </Button>
+        )}
+        
         <Link to="/app" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
           <img src="/logo.png" alt="Manga Music Logo" className="h-8 w-8 rounded-full" />
           <h1 className="text-xl font-semibold text-white">Manga Music</h1>
