@@ -1,18 +1,13 @@
 import React, { useRef, useCallback } from 'react';
 import YouTube, { YouTubePlayer } from 'react-youtube';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader2, Repeat, ListMusic, Youtube, Shuffle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
-import { formatTime } from '@/utils/time';
 import { showSuccess } from '@/utils/toast';
 import { useMediaShortcuts } from '@/hooks/use-media-shortcuts';
-import { Toggle } from '@/components/ui/toggle';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import LyricsSheet from './LyricsSheet'; // Import LyricsSheet
-
-const PLAYBACK_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+import PlaybackControls from './player/PlaybackControls';
+import ProgressSlider from './player/ProgressSlider';
+import RightControls from './player/RightControls';
 
 const MusicPlayer = () => {
   const { 
@@ -20,7 +15,6 @@ const MusicPlayer = () => {
     isPlaying, 
     setIsPlaying, 
     currentPlaylist, 
-    setCurrentTrack, 
     isLoadingData,
     isLooping,
     setIsLooping,
@@ -32,7 +26,7 @@ const MusicPlayer = () => {
     setPlaybackRate,
     shufflePlaylist, 
     isShuffling, 
-    setIsShuffling, 
+    setIsShuffling,
   } = useMusicPlayer();
   
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -270,6 +264,8 @@ const MusicPlayer = () => {
       </div>
     );
   }
+  
+  const isPlaylistShort = (currentPlaylist?.tracks.length || 0) < 2;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 flex items-center justify-between h-20 z-50 sm:px-6">
@@ -301,157 +297,40 @@ const MusicPlayer = () => {
 
       {/* Controls and Progress (Center) */}
       <div className="flex flex-col items-center w-[50%] sm:w-1/2 max-w-xs sm:max-w-lg mx-2">
-        <div className="flex space-x-2 sm:space-x-4 mb-1 items-center">
-          
-          {/* Shuffle Button */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleShuffle} 
-            className={cn(
-                "h-7 w-7 sm:h-8 sm:w-8 text-foreground hover:text-primary",
-                isShuffling && "animate-pulse"
-            )}
-            disabled={isShuffling || (currentPlaylist?.tracks.length || 0) < 2}
-            aria-label="Shuffle Playlist"
-          >
-            {isShuffling ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-                <Shuffle className="h-4 w-4" />
-            )}
-          </Button>
-          
-          {/* Loop Toggle (Hidden on small mobile) */}
-          <Toggle 
-            pressed={isLooping} 
-            onPressedChange={handleLoopToggle} 
-            variant="outline" 
-            size="sm"
-            className={cn("h-7 w-7 sm:h-8 sm:w-8 hidden sm:flex", isLooping ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground hover:bg-secondary")}
-            aria-label="Toggle loop"
-          >
-            <Repeat className="h-4 w-4" />
-          </Toggle>
-          
-          <Button variant="ghost" size="icon" onClick={playPrevious} className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-transparent text-foreground hover:text-primary">
-            <SkipBack className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
-          
-          <Button 
-            variant="secondary" 
-            size="icon" 
-            className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50" 
-            onClick={togglePlayPause}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-                <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
-            ) : isPlaying ? (
-                <Pause className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
-            ) : (
-                <Play className="h-4 w-4 sm:h-5 sm:w-5 fill-current" />
-            )}
-          </Button>
-          
-          <Button variant="ghost" size="icon" onClick={playNext} className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-transparent text-foreground hover:text-primary">
-            <SkipForward className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
-          
-          {/* Autoplay Toggle (Hidden on small mobile) */}
-          <Toggle 
-            pressed={isAutoplayEnabled} 
-            onPressedChange={handleAutoplayToggle} 
-            variant="outline" 
-            size="sm"
-            className={cn("h-7 w-7 sm:h-8 sm:w-8 hidden sm:flex", isAutoplayEnabled ? "bg-primary text-primary-foreground hover:bg-primary/90" : "text-muted-foreground hover:bg-secondary")}
-            aria-label="Toggle autoplay"
-          >
-            <ListMusic className="h-4 w-4" />
-          </Toggle>
-          
-        </div>
-        {/* Progress Bar */}
-        <div className="w-full flex items-center space-x-1 sm:space-x-2 text-[10px] sm:text-xs text-muted-foreground">
-          <span>{formatTime(currentTime)}</span>
-          <Slider 
-            value={[currentTime]} 
-            onValueChange={handleSeek} 
-            max={duration} 
-            step={1} 
-            className="w-full cursor-pointer" 
-            disabled={duration === 0 || isLoading}
-          />
-          <span className="hidden sm:inline">{formatTime(duration)}</span>
-        </div>
+        
+        <PlaybackControls 
+            isPlaying={isPlaying}
+            isLoading={isLoading}
+            isLooping={isLooping}
+            isAutoplayEnabled={isAutoplayEnabled}
+            isShuffling={isShuffling}
+            isPlaylistShort={isPlaylistShort}
+            togglePlayPause={togglePlayPause}
+            playNext={playNext}
+            playPrevious={playPrevious}
+            handleLoopToggle={handleLoopToggle}
+            handleAutoplayToggle={handleAutoplayToggle}
+            handleShuffle={handleShuffle}
+        />
+        
+        <ProgressSlider 
+            currentTime={currentTime}
+            duration={duration}
+            isLoading={isLoading}
+            handleSeek={handleSeek}
+        />
       </div>
 
       {/* Volume Control, Playback Rate, and Lyrics (Right) */}
-      <div className="flex items-center w-[25%] sm:w-1/4 justify-end space-x-1 sm:space-x-4 min-w-[80px] max-w-[25%] sm:max-w-none">
-        
-        {/* YouTube Link Button (Mobile/Desktop) */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8 text-foreground hover:text-primary"
-          disabled={!currentTrack}
-          aria-label="Open YouTube Video"
-          asChild
-        >
-          <a 
-            href={`https://www.youtube.com/watch?v=${currentTrack.id}`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-          >
-            <Youtube className="h-5 w-5" />
-          </a>
-        </Button>
-        
-        {/* Lyrics Button (Mobile/Desktop) */}
-        <LyricsSheet />
-        
-        {/* Mute Button (Mobile only) */}
-        <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={toggleMute} 
-            className="h-8 w-8 text-foreground hover:text-primary sm:hidden"
-            aria-label="Toggle Mute"
-        >
-            {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-        </Button>
-        
-        {/* Desktop Controls Group (Rate Selector + Volume Slider) */}
-        <div className="hidden sm:flex items-center space-x-4">
-            {/* Playback Rate Selector */}
-            <Select value={playbackRate.toString()} onValueChange={handleRateChange}>
-                <SelectTrigger className="w-[80px] h-8 text-xs text-white">
-                    <SelectValue placeholder="1x" />
-                </SelectTrigger>
-                <SelectContent>
-                    {PLAYBACK_RATES.map(rate => (
-                        <SelectItem key={rate} value={rate.toString()}>
-                            {rate}x
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            
-            {/* Volume Slider + Mute Button */}
-            <div className="flex items-center space-x-2 min-w-[100px]">
-                <Button variant="ghost" size="icon" onClick={toggleMute} className="h-8 w-8 hover:bg-transparent text-foreground hover:text-primary">
-                  {isMuted || volume === 0 ? <VolumeX className="h-4 w-4 sm:h-5 sm:w-5" /> : <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />}
-                </Button>
-                <Slider 
-                  value={[isMuted ? 0 : volume]} 
-                  onValueChange={handleVolumeChange} 
-                  max={100} 
-                  step={1} 
-                  className="w-[100px] cursor-pointer" 
-                />
-            </div>
-        </div>
-      </div>
+      <RightControls 
+        currentTrackId={currentTrack.id}
+        volume={volume}
+        isMuted={isMuted}
+        playbackRate={playbackRate}
+        toggleMute={toggleMute}
+        handleVolumeChange={handleVolumeChange}
+        handleRateChange={handleRateChange}
+      />
     </div>
   );
 };
