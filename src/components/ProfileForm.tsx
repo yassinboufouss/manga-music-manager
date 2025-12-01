@@ -9,7 +9,8 @@ import { ProfileSchema, ProfileFormValues } from '@/lib/schemas';
 import { useProfile } from '@/hooks/use-profile';
 import { useAuth } from '@/integrations/supabase/auth';
 import AvatarUpload from './AvatarUpload';
-import UpdateEmailDialog from './UpdateEmailDialog'; // Import new component
+import UpdateEmailDialog from './UpdateEmailDialog';
+import UpdatePasswordDialog from './UpdatePasswordDialog';
 
 const ProfileForm: React.FC = () => {
   const { profile, isLoading, isUpdating, updateProfile } = useProfile();
@@ -68,6 +69,9 @@ const ProfileForm: React.FC = () => {
             <Input value={user?.email || "N/A"} disabled className="bg-muted/50" />
             <UpdateEmailDialog />
         </div>
+        
+        {/* Password Update Button */}
+        <UpdatePasswordDialog />
         
         <FormField
           control={form.control}

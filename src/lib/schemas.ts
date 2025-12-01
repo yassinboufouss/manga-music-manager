@@ -37,3 +37,11 @@ export const ProfileSchema = z.object({
 });
 
 export type ProfileFormValues = z.infer<typeof ProfileSchema>;
+
+export const UpdatePasswordSchema = z.object({
+  password: z.string().min(6, {
+    message: "Password must be at least 6 characters long.",
+  }),
+});
+
+export type UpdatePasswordFormValues = z.infer<typeof UpdatePasswordSchema>;
