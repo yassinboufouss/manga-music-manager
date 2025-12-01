@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Play, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const Index = () => {
+const AppIndex = () => {
   const { currentTrack, currentPlaylist, setCurrentTrack, setIsPlaying, isLoadingData } = useMusicPlayer();
 
   const handlePlayFirstTrack = () => {
@@ -83,4 +83,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default AppIndex;

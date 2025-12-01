@@ -27,10 +27,10 @@ const Header: React.FC = () => {
             <Menu className="h-5 w-5" />
           </Button>
         )}
-        <div className="flex items-center space-x-2">
+        <Link to="/app" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
           <img src="/logo.png" alt="Manga Music Logo" className="h-8 w-8 rounded-full" />
           <h1 className="text-xl font-semibold text-white">Manga Music</h1>
-        </div>
+        </Link>
       </div>
 
       <DropdownMenu>

@@ -8,8 +8,8 @@ const Login = () => {
   const { user, isLoading } = useAuth();
 
   if (!isLoading && user) {
-    // Redirect authenticated users to the home page
-    return <Navigate to="/" replace />;
+    // Redirect authenticated users to the main application page
+    return <Navigate to="/app" replace />;
   }
 
   return (
@@ -35,7 +35,7 @@ const Login = () => {
             },
           }}
           theme="dark"
-          redirectTo={window.location.origin + '/'}
+          redirectTo={window.location.origin + '/app'}
         />
       </div>
     </div>
