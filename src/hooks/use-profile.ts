@@ -18,7 +18,30 @@ const fetchProfile = async (userId: string): Promise<DbProfile> => {
     .eq('id', userId)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    // Check if the error is 'No rows found' (PGRST116)
+    if (error.code === 'PGRST116') {
+      console.warn(`Profile missing for user ${userId}. Attempting to create default profile.`);
+      
+      // Attempt to create a default profile
+      const { data: newProfile, error: insertError } = await supabase
+        .from('profiles')
+        .insert({ id: userId, first_name: null, last_name: null, avatar_url: null })
+        .select('id, first_name, last_name, avatar_url')
+        .single();
+        
+      if (insertError) {
+        console.error("Failed to create default profile:", insertError);
+        throw insertError;
+      }
+      
+      showSuccess("Default profile created successfully.");
+      return newProfile;
+    }
+    
+    // Throw other errors
+    throw error;
+  }
   return data;
 };
 
