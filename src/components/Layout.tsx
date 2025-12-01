@@ -5,50 +5,38 @@ import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import Header from './Header';
-import * as Resizable from "react-resizable-panels";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { isSidebarOpen, setIsSidebarOpen, toggleSidebar } = useSidebar();
+  const { isSidebarOpen, toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
 
-  // Calculate height dynamically: 100vh - Player (80px)
-  const mainAreaHeightClass = "flex-1 overflow-hidden"; 
-
   const renderDesktopLayout = () => (
-    <Resizable.ResizablePanelGroup direction="horizontal" className={mainAreaHeightClass}>
-      {/* Sidebar Panel */}
-      <Resizable.ResizablePanel 
-        defaultSize={20} 
-        minSize={10} 
-        collapsedSize={0}
-        collapsible={true}
-        onCollapse={() => setIsSidebarOpen(false)}
-        onExpand={() => setIsSidebarOpen(true)}
+    // Desktop layout uses flexbox to position sidebar and main content side-by-side
+    <div className="flex h-full">
+      {/* Sidebar Panel - Fixed width, controlled by isSidebarOpen */}
+      <aside 
+        className={cn(
+          "flex-shrink-0 h-full transition-all duration-300 ease-in-out bg-background border-r border-border",
+          isSidebarOpen ? "w-64" : "w-0 overflow-hidden" // Fixed width sidebar
+        )}
       >
-        <aside className="h-full bg-background border-r border-border">
-          <PlaylistSidebar />
-        </aside>
-      </Resizable.ResizablePanel>
+        <PlaylistSidebar />
+      </aside>
       
-      {/* Handle */}
-      <Resizable.ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/50 transition-colors" />
-      
-      {/* Main Content Panel */}
-      <Resizable.ResizablePanel minSize={50}>
-        <main className="h-full overflow-y-auto pb-20 bg-background relative">
-          <Header />
-          {children}
-        </main>
-      </Resizable.ResizablePanel>
-    </Resizable.ResizablePanelGroup>
+      {/* Main Content Panel - Takes up remaining space */}
+      <main className="flex-1 h-full overflow-y-auto pb-20 bg-background relative">
+        <Header />
+        {children}
+      </main>
+    </div>
   );
   
   const renderMobileLayout = () => (
-    <div className={cn("flex flex-1 overflow-hidden", mainAreaHeightClass)}>
+    <div className="flex flex-1 h-full">
         {/* Sidebar (Mobile Overlay) */}
         <aside 
           className={cn(
@@ -76,8 +64,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       
-      {/* Main Content Area (Sidebar + Page Content) */}
-      {isMobile ? renderMobileLayout() : renderDesktopLayout()}
+      {/* Main Content Area (Sidebar + Page Content) - Takes up all space above the player */}
+      <div className="flex-1 overflow-hidden">
+        {isMobile ? renderMobileLayout() : renderDesktopLayout()}
+      </div>
 
       {/* Persistent Player Bar */}
       <MusicPlayer />
