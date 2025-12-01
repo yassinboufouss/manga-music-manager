@@ -251,10 +251,12 @@ const MusicPlayer = () => {
   const handleShuffleToggle = () => {
       if (!isPremium) {
           showError("Shuffle is a premium feature. Upgrade to unlock!");
+          // Do not toggle the state if not premium
           return;
       }
       if ((currentPlaylist?.tracks.length || 0) < 2) {
           showError("Cannot shuffle: Playlist is empty or too short.");
+          // Do not toggle the state if playlist is too short
           return;
       }
       setIsShuffling(prev => !prev);
