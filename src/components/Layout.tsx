@@ -5,7 +5,11 @@ import { useSidebar } from '@/context/SidebarContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import Header from './Header';
-import * as Resizable from "react-resizable-panels";
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from "react-resizable-panels";
 
 interface LayoutProps {
   children: ReactNode;
@@ -19,9 +23,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const mainAreaHeightClass = "flex-1 overflow-hidden"; 
 
   const renderDesktopLayout = () => (
-    <Resizable.ResizablePanelGroup direction="horizontal" className={mainAreaHeightClass}>
+    <ResizablePanelGroup direction="horizontal" className={mainAreaHeightClass}>
       {/* Sidebar Panel */}
-      <Resizable.ResizablePanel 
+      <ResizablePanel 
         defaultSize={20} 
         minSize={10} 
         collapsedSize={0}
@@ -32,19 +36,19 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <aside className="h-full bg-background border-r border-border">
           <PlaylistSidebar />
         </aside>
-      </Resizable.ResizablePanel>
+      </ResizablePanel>
       
       {/* Handle */}
-      <Resizable.ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/50 transition-colors" />
+      <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/50 transition-colors" />
       
       {/* Main Content Panel */}
-      <Resizable.ResizablePanel minSize={50}>
+      <ResizablePanel minSize={50}>
         <main className="h-full overflow-y-auto pb-20 bg-background relative">
           <Header />
           {children}
         </main>
-      </Resizable.ResizablePanel>
-    </Resizable.ResizablePanelGroup>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
   
   const renderMobileLayout = () => (
