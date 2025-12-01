@@ -9,6 +9,7 @@ import { ProfileSchema, ProfileFormValues } from '@/lib/schemas';
 import { useProfile } from '@/hooks/use-profile';
 import { useAuth } from '@/integrations/supabase/auth';
 import AvatarUpload from './AvatarUpload';
+import UpdateEmailDialog from './UpdateEmailDialog'; // Import new component
 
 const ProfileForm: React.FC = () => {
   const { profile, isLoading, isUpdating, updateProfile } = useProfile();
@@ -61,10 +62,11 @@ const ProfileForm: React.FC = () => {
         
         <AvatarUpload />
         
+        {/* Email Display and Update Button */}
         <div className="space-y-2">
             <FormLabel>Email</FormLabel>
             <Input value={user?.email || "N/A"} disabled className="bg-muted/50" />
-            <p className="text-xs text-muted-foreground">Email cannot be changed here.</p>
+            <UpdateEmailDialog />
         </div>
         
         <FormField
