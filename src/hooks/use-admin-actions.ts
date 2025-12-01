@@ -62,5 +62,6 @@ export const useAdminActions = () => {
     banUser,
     unbanUser,
     isPending: adminActionMutation.isPending,
+    pendingTargetId: adminActionMutation.isPending ? adminActionMutation.variables?.targetUserId : null,
   };
 };

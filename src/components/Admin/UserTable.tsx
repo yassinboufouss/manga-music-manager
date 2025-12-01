@@ -14,7 +14,7 @@ interface UserTableProps {
 }
 
 const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
-  const { banUser, unbanUser, isPending } = useAdminActions();
+  const { banUser, unbanUser, isPending, pendingTargetId } = useAdminActions();
   const { user: currentUser } = useAuth();
   
   // Helper to check if a user is currently banned (banned_until is set)
@@ -42,15 +42,16 @@ const UserTable: React.FC<UserTableProps> = ({ profiles }) => {
           {profiles.map((profile) => {
             const isSelf = profile.id === currentUser?.id;
             const currentlyBanned = isBanned(profile);
+            const isProcessing = isPending && pendingTargetId === profile.id;
             
             const actionButton = (
                 <Button 
                     variant={currentlyBanned ? "secondary" : "destructive"} 
                     size="sm"
                     onClick={() => currentlyBanned ? unbanUser(profile.id) : banUser(profile.id)}
-                    disabled={isSelf || isPending}
+                    disabled={isSelf || isProcessing}
                 >
-                    {isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                    {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                     {currentlyBanned ? "Unban" : "Ban"}
                 </Button>
             );
