@@ -1,20 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-const COOLDOWN_KEY = 'track_add_cooldown_end';
-
 /**
- * Manages a time-based cooldown state using local storage.
+ * Manages a time-based cooldown state (session-based, no local storage).
  * @param durationSeconds The duration of the cooldown in seconds.
  * @returns An object containing the remaining time, a boolean indicating if the cooldown is active, and a function to start the cooldown.
  */
 export const useCooldown = (durationSeconds: number) => {
-  const [cooldownEnd, setCooldownEnd] = useState<number>(() => {
-    if (typeof window !== 'undefined') {
-      const storedEnd = localStorage.getItem(COOLDOWN_KEY);
-      return storedEnd ? parseInt(storedEnd, 10) : 0;
-    }
-    return 0;
-  });
+  // Store the timestamp when the cooldown should end. Initialized to 0 (no active cooldown).
+  const [cooldownEnd, setCooldownEnd] = useState<number>(0);
   const [remainingTime, setRemainingTime] = useState(0);
 
   const isCooldownActive = remainingTime > 0;
@@ -32,7 +25,6 @@ export const useCooldown = (durationSeconds: number) => {
 
       if (timeRemaining === 0 && timer !== null) {
         clearInterval(timer);
-        localStorage.removeItem(COOLDOWN_KEY);
       }
     };
 
@@ -41,7 +33,6 @@ export const useCooldown = (durationSeconds: number) => {
       timer = window.setInterval(updateRemainingTime, 1000);
     } else {
       setRemainingTime(0);
-      localStorage.removeItem(COOLDOWN_KEY);
     }
 
     return () => {
@@ -53,7 +44,6 @@ export const useCooldown = (durationSeconds: number) => {
 
   const startCooldown = useCallback(() => {
     const newCooldownEnd = Date.now() + durationSeconds * 1000;
-    localStorage.setItem(COOLDOWN_KEY, newCooldownEnd.toString());
     setCooldownEnd(newCooldownEnd);
   }, [durationSeconds]);
 
