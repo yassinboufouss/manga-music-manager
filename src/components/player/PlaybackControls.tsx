@@ -16,7 +16,7 @@ interface PlaybackControlsProps {
   playPrevious: () => void;
   handleLoopToggle: () => void;
   handleAutoplayToggle: () => void;
-  handleShuffle: () => Promise<void>;
+  handleShuffle: () => void; // Changed signature: no longer async/Promise<void>
 }
 
 const PlaybackControls: React.FC<PlaybackControlsProps> = ({
@@ -43,16 +43,12 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         onClick={handleShuffle} 
         className={cn(
             "h-7 w-7 sm:h-8 sm:w-8 text-foreground hover:text-primary",
-            isShuffling && "animate-pulse"
+            isShuffling && "text-primary hover:text-primary/80" // Highlight if shuffle mode is active
         )}
-        disabled={isShuffling || isPlaylistShort}
-        aria-label="Shuffle Playlist"
+        disabled={isPlaylistShort}
+        aria-label="Toggle Shuffle Mode"
       >
-        {isShuffling ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-            <Shuffle className="h-4 w-4" />
-        )}
+        <Shuffle className="h-4 w-4" />
       </Button>
       
       {/* Loop Toggle (Hidden on small mobile) */}

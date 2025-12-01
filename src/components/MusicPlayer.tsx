@@ -3,7 +3,7 @@ import YouTube, { YouTubePlayer } from 'react-youtube';
 import { Loader2 } from 'lucide-react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 import { cn } from '@/lib/utils';
-import { showSuccess } from '@/utils/toast';
+import { showSuccess, showError } from '@/utils/toast';
 import { useMediaShortcuts } from '@/hooks/use-media-shortcuts';
 import PlaybackControls from './player/PlaybackControls';
 import ProgressSlider from './player/ProgressSlider';
@@ -24,7 +24,6 @@ const MusicPlayer = () => {
     playPrevious,
     playbackRate,
     setPlaybackRate,
-    shufflePlaylist, 
     isShuffling, 
     setIsShuffling,
   } = useMusicPlayer();
@@ -242,10 +241,13 @@ const MusicPlayer = () => {
       setPlaybackRate(parseFloat(value));
   };
   
-  const handleShuffle = async () => {
-      setIsShuffling(true); 
-      await shufflePlaylist();
-      setIsShuffling(false); 
+  // Handle shuffle toggle (now just toggles the persistent state)
+  const handleShuffleToggle = () => {
+      if ((currentPlaylist?.tracks.length || 0) < 2) {
+          showError("Cannot shuffle: Playlist is empty or too short.");
+          return;
+      }
+      setIsShuffling(prev => !prev);
   };
 
   if (isLoadingData) {
@@ -310,7 +312,7 @@ const MusicPlayer = () => {
             playPrevious={playPrevious}
             handleLoopToggle={handleLoopToggle}
             handleAutoplayToggle={handleAutoplayToggle}
-            handleShuffle={handleShuffle}
+            handleShuffle={handleShuffleToggle}
         />
         
         <ProgressSlider 

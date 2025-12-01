@@ -47,14 +47,13 @@ interface MusicPlayerContextType {
   playNext: () => void;
   playPrevious: () => void;
   
-  // New: Playback Rate
+  // Playback Rate
   playbackRate: number;
   setPlaybackRate: React.Dispatch<React.SetStateAction<number>>;
 
-  // New: Shuffle
+  // Shuffle Mode
   isShuffling: boolean;
   setIsShuffling: React.Dispatch<React.SetStateAction<boolean>>;
-  shufflePlaylist: () => Promise<void>;
 }
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
@@ -81,7 +80,10 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
   const [isLooping, setIsLooping] = useState(false);
   const [isAutoplayEnabled, setIsAutoplayEnabled] = useState(true);
   const [playbackRate, setPlaybackRate] = useState(1);
-  const [isShuffling, setIsShuffling] = useState(false); // New state
+  
+  // Shuffle Mode States
+  const [isShuffling, setIsShuffling] = useState(false); // Persistent shuffle mode state
+  const [shuffledQueue, setShuffledQueue] = useState<Track[]>([]); // The randomized queue
   
   // We need a temporary state for currentPlaylist to pass to the hook for mutations
   const [currentPlaylistState, setCurrentPlaylistState] = useState<Playlist | null>(null);
@@ -113,41 +115,78 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
       }
     : null;
     
+  // --- Playback Queue Management ---
+  
+  const getPlaybackQueue = React.useCallback(() => {
+      if (isShuffling && shuffledQueue.length > 0) {
+          return shuffledQueue;
+      }
+      return currentPlaylist?.tracks || [];
+  }, [isShuffling, shuffledQueue, currentPlaylist]);
+  
+  // Effect 3: Manage Shuffled Queue when playlist changes or shuffle mode toggles
+  useEffect(() => {
+      if (isShuffling && currentPlaylist?.tracks && currentPlaylist.tracks.length > 0) {
+          // If shuffle is enabled, generate a new queue based on the current playlist tracks
+          // We ensure the current track remains the first in the new queue if possible, 
+          // then shuffle the rest.
+          const tracksToShuffle = [...currentPlaylist.tracks];
+          
+          let initialTrack: Track | undefined;
+          if (currentTrack) {
+              const currentTrackIndex = tracksToShuffle.findIndex(t => t.dbId === currentTrack.dbId);
+              if (currentTrackIndex !== -1) {
+                  initialTrack = tracksToShuffle.splice(currentTrackIndex, 1)[0];
+              }
+          }
+          
+          const newQueue = initialTrack ? [initialTrack, ...shuffleArray(tracksToShuffle)] : shuffleArray(tracksToShuffle);
+          
+          setShuffledQueue(newQueue);
+      } else if (!isShuffling) {
+          // Clear queue if shuffle is disabled
+          setShuffledQueue([]);
+      }
+  }, [isShuffling, currentPlaylist, currentTrack]);
+
+
   // --- Playback Navigation Logic ---
   
   const playNext = React.useCallback(() => {
-    if (!currentTrack || !currentPlaylist || currentPlaylist.tracks.length === 0) return;
+    const queue = getPlaybackQueue();
+    if (!currentTrack || queue.length === 0) return;
     
     // Use dbId for reliable identification if available, otherwise fall back to YouTube ID
     const currentId = currentTrack.dbId || currentTrack.id;
-    const currentIndex = currentPlaylist.tracks.findIndex(t => (t.dbId || t.id) === currentId);
+    const currentIndex = queue.findIndex(t => (t.dbId || t.id) === currentId);
     
-    const nextIndex = (currentIndex + 1) % currentPlaylist.tracks.length;
+    const nextIndex = (currentIndex + 1) % queue.length;
     
     // If we are at the end of the playlist and autoplay is disabled, stop playback
-    if (!isAutoplayEnabled && currentIndex === currentPlaylist.tracks.length - 1) {
-        setCurrentTrack(currentPlaylist.tracks[currentIndex]); // Stay on the last track
+    if (!isAutoplayEnabled && currentIndex === queue.length - 1) {
+        setCurrentTrack(queue[currentIndex]); // Stay on the last track
         setIsPlaying(false);
         return;
     }
     
-    setCurrentTrack(currentPlaylist.tracks[nextIndex]);
+    setCurrentTrack(queue[nextIndex]);
     setIsPlaying(true); 
-  }, [currentTrack, currentPlaylist, isAutoplayEnabled]);
+  }, [currentTrack, getPlaybackQueue, isAutoplayEnabled, setIsPlaying, setCurrentTrack]);
 
   const playPrevious = React.useCallback(() => {
-    if (!currentTrack || !currentPlaylist || currentPlaylist.tracks.length === 0) return;
+    const queue = getPlaybackQueue();
+    if (!currentTrack || queue.length === 0) return;
     
     const currentId = currentTrack.dbId || currentTrack.id;
-    const currentIndex = currentPlaylist.tracks.findIndex(t => (t.dbId || t.id) === currentId);
+    const currentIndex = queue.findIndex(t => (t.dbId || t.id) === currentId);
     
     let previousIndex = currentIndex - 1;
     if (previousIndex < 0) {
-      previousIndex = currentPlaylist.tracks.length - 1;
+      previousIndex = queue.length - 1;
     }
-    setCurrentTrack(currentPlaylist.tracks[previousIndex]);
+    setCurrentTrack(queue[previousIndex]);
     setIsPlaying(true); 
-  }, [currentTrack, currentPlaylist]);
+  }, [currentTrack, getPlaybackQueue, setCurrentTrack, setIsPlaying]);
 
 
   // Effect 1: Initialize selectedPlaylistId when playlists load
@@ -288,28 +327,7 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
       }
   }
   
-  const shufflePlaylist = async () => {
-      if (!currentPlaylist || currentPlaylist.tracks.length < 2) {
-          showError("Cannot shuffle: Playlist is empty or too short.");
-          return;
-      }
-      
-      const shuffledTracks = shuffleArray(currentPlaylist.tracks);
-      
-      try {
-          // Update the database order
-          await updateTrackOrder(shuffledTracks);
-          showSuccess("Playlist shuffled!");
-          
-          // Start playing the new first track
-          if (shuffledTracks.length > 0) {
-              setCurrentTrack(shuffledTracks[0]);
-              setIsPlaying(true);
-          }
-      } catch (error) {
-          // Error handling is inside updateTrackOrder
-      }
-  }
+  // Removed the old shufflePlaylist function that permanently reordered the DB.
 
   const value = {
     playlists: playlists || null,
@@ -337,14 +355,13 @@ export const MusicPlayerProvider = ({ children }: MusicPlayerProviderProps) => {
     playNext,
     playPrevious,
     
-    // New: Playback Rate
+    // Playback Rate
     playbackRate,
     setPlaybackRate,
     
-    // New: Shuffle
+    // Shuffle Mode
     isShuffling,
     setIsShuffling,
-    shufflePlaylist,
   };
   
   if (isError) {
