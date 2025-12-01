@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { formatTime } from '@/utils/time';
 import { showSuccess } from '@/utils/toast';
-import { usePlaybackShortcuts } from '@/hooks/use-playback-shortcuts';
+import { useMediaShortcuts } from '@/hooks/use-media-shortcuts';
 import { Toggle } from '@/components/ui/toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import LyricsSheet from './LyricsSheet'; // Import LyricsSheet
@@ -30,9 +30,9 @@ const MusicPlayer = () => {
     playPrevious,
     playbackRate,
     setPlaybackRate,
-    shufflePlaylist, // New
-    isShuffling, // New
-    setIsShuffling, // New
+    shufflePlaylist, 
+    isShuffling, 
+    setIsShuffling, 
   } = useMusicPlayer();
   
   const playerRef = useRef<YouTubePlayer | null>(null);
@@ -42,7 +42,7 @@ const MusicPlayer = () => {
   // State for progress
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
-  const intervalRef = useRef<number | null>(null);
+  const intervalRef = useRef<number | null>(null); // FIX 1: Initialized useRef with null
   
   // State for loading/buffering
   const [isLoading, setIsLoading] = React.useState(false);
@@ -82,9 +82,39 @@ const MusicPlayer = () => {
       setIsPlaying(true);
     }
   }, [isPlaying, isLoading, setIsPlaying]);
+  
+  const seek = useCallback((delta: number) => {
+    if (!playerRef.current || duration === 0) return;
+    
+    const newTime = Math.max(0, Math.min(duration, currentTime + delta));
+    playerRef.current.seekTo(newTime, true);
+    setCurrentTime(newTime);
+  }, [currentTime, duration]);
+  
+  const changeVolume = useCallback((delta: number) => {
+    if (!playerRef.current) return;
+    
+    const currentVolume = playerRef.current.getVolume();
+    const newVolume = Math.max(0, Math.min(100, currentVolume + delta));
+    
+    playerRef.current.setVolume(newVolume);
+    setVolume(newVolume);
+    
+    if (newVolume > 0 && isMuted) {
+        setIsMuted(false);
+    } else if (newVolume === 0 && !isMuted) {
+        setIsMuted(true);
+    }
+  }, [isMuted]);
 
   // Integrate keyboard shortcuts
-  usePlaybackShortcuts({ togglePlayPause, playNext, playPrevious });
+  useMediaShortcuts({ 
+      togglePlayPause, 
+      playNext, 
+      playPrevious, 
+      seek, 
+      changeVolume 
+  });
 
 
   React.useEffect(() => {
@@ -219,9 +249,9 @@ const MusicPlayer = () => {
   };
   
   const handleShuffle = async () => {
-      setIsShuffling(true);
+      setIsShuffling(true); // FIX 2: Use setIsShuffling setter
       await shufflePlaylist();
-      setIsShuffling(false);
+      setIsShuffling(false); // FIX 3: Use setIsShuffling setter
   };
 
   if (isLoadingData) {

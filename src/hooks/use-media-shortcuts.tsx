@@ -1,13 +1,18 @@
 import { useEffect } from 'react';
 import { useMusicPlayer } from '@/context/MusicPlayerContext';
 
-interface PlaybackControls {
+interface MediaControls {
   togglePlayPause: () => void;
   playNext: () => void;
   playPrevious: () => void;
+  seek: (time: number) => void;
+  changeVolume: (delta: number) => void;
 }
 
-export function usePlaybackShortcuts({ togglePlayPause, playNext, playPrevious }: PlaybackControls) {
+const SEEK_STEP = 5; // 5 seconds
+const VOLUME_STEP = 5; // 5%
+
+export function useMediaShortcuts({ togglePlayPause, playNext, playPrevious, seek, changeVolume }: MediaControls) {
   const { currentTrack } = useMusicPlayer();
 
   useEffect(() => {
@@ -30,6 +35,22 @@ export function usePlaybackShortcuts({ togglePlayPause, playNext, playPrevious }
         case 'ArrowLeft': // Left arrow for Skip Previous
           playPrevious();
           break;
+        case 'j': // J key for Seek Backward
+        case 'J':
+          seek(-SEEK_STEP);
+          break;
+        case 'l': // L key for Seek Forward
+        case 'L':
+          seek(SEEK_STEP);
+          break;
+        case 'ArrowUp': // Up arrow for Volume Up
+          event.preventDefault(); // Prevent scrolling
+          changeVolume(VOLUME_STEP);
+          break;
+        case 'ArrowDown': // Down arrow for Volume Down
+          event.preventDefault(); // Prevent scrolling
+          changeVolume(-VOLUME_STEP);
+          break;
       }
     };
 
@@ -38,5 +59,5 @@ export function usePlaybackShortcuts({ togglePlayPause, playNext, playPrevious }
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [currentTrack, togglePlayPause, playNext, playPrevious]);
+  }, [currentTrack, togglePlayPause, playNext, playPrevious, seek, changeVolume]);
 }
