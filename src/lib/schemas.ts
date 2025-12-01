@@ -11,12 +11,10 @@ export const AddTrackSchema = z.object({
   title: z.string().min(1, {
     message: "Title is required.",
   }),
-  artist: z.string().min(1, {
-    message: "Artist name is required.",
-  }),
+  artist: z.string().max(100, "Artist name is too long.").optional().nullable(),
   duration: z.string().regex(/^\d+:\d{2}$/, {
     message: "Duration must be in M:SS format (e.g., 3:45).",
-  }),
+  }).optional().nullable(),
 });
 
 export type AddTrackFormValues = z.infer<typeof AddTrackSchema>;

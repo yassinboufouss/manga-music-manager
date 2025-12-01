@@ -48,7 +48,7 @@ const AddTrackDialog: React.FC = () => {
   // Cooldown setup (30 seconds)
   const { isCooldownActive, remainingTime, startCooldown } = useCooldown(30);
   
-  // Ref to prevent duplicate submissions when metadata is fetched repeatedly due to re-renders
+  // Ref to track if the track change was user-initiated (to prevent toast on initial load)
   const lastProcessedIdRef = useRef<string | null>(null); 
 
   const form = useForm<AddTrackFormValues>({
@@ -56,19 +56,21 @@ const AddTrackDialog: React.FC = () => {
     defaultValues: {
       youtubeId: "",
       title: "",
-      artist: "",
-      duration: "0:00",
+      artist: null,
+      duration: null,
     },
   });
   
   const youtubeIdValue = form.watch("youtubeId");
+  const titleValue = form.watch("title");
 
   const onSubmit = useCallback(async (data: AddTrackFormValues) => {
+    // Ensure artist and duration have fallback values if not provided/fetched
     const trackData = {
       id: data.youtubeId,
       title: data.title,
-      artist: data.artist,
-      duration: data.duration,
+      artist: data.artist || "Unknown Artist",
+      duration: data.duration || "0:00",
     };
     
     try {
@@ -129,13 +131,13 @@ const AddTrackDialog: React.FC = () => {
   // Effect to show error if metadata fetching fails
   useEffect(() => {
       if (metadataError) {
-          showError(`Metadata fetch failed: ${metadataError}`);
+          showError(`Metadata fetch failed: ${metadataError}. Please enter track details manually.`);
           // If fetch fails, clear the ref to allow retry
           lastProcessedIdRef.current = null;
-          // Also reset the form fields that would have been populated by metadata
+          // Reset metadata-dependent fields to allow manual input
           form.setValue("title", "");
-          form.setValue("artist", "");
-          form.setValue("duration", "0:00");
+          form.setValue("artist", null);
+          form.setValue("duration", null);
       }
   }, [metadataError, form]);
   
@@ -147,8 +149,8 @@ const AddTrackDialog: React.FC = () => {
           form.reset({ // Reset form fields to default on close
               youtubeId: "",
               title: "",
-              artist: "",
-              duration: "0:00",
+              artist: null,
+              duration: null,
           });
       }
   }, [open, resetMetadata, form]);
@@ -168,6 +170,12 @@ const AddTrackDialog: React.FC = () => {
   const cooldownButtonText = isCooldownActive 
     ? `Cooldown: ${formatTime(remainingTime)}` 
     : "Add New Track";
+    
+  // Determine if manual submission is possible: 
+  // 1. Not submitting/fetching
+  // 2. Not on cooldown
+  // 3. Form is valid (at least ID and Title are required by schema)
+  const canManuallySubmit = !form.formState.isSubmitting && !isFetchingMetadata && !isCooldownActive && form.formState.isValid;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -189,7 +197,7 @@ const AddTrackDialog: React.FC = () => {
         <DialogHeader>
           <DialogTitle>Add New YouTube Track</DialogTitle>
           <DialogDescription>
-            Paste a YouTube URL or ID. The track will be added automatically once details are fetched.
+            Paste a YouTube URL or ID. If metadata fetching fails, you can enter details manually.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -227,7 +235,7 @@ const AddTrackDialog: React.FC = () => {
                 <FormItem>
                   <FormLabel>Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="Song Title" {...field} disabled={isFetchingMetadata || form.formState.isSubmitting} />
+                    <Input placeholder="Song Title" {...field} disabled={form.formState.isSubmitting} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -239,9 +247,9 @@ const AddTrackDialog: React.FC = () => {
               name="artist"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Artist</FormLabel>
+                  <FormLabel>Artist (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Artist Name" {...field} disabled={isFetchingMetadata || form.formState.isSubmitting} />
+                    <Input placeholder="Artist Name" {...field} disabled={form.formState.isSubmitting} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -253,9 +261,9 @@ const AddTrackDialog: React.FC = () => {
               name="duration"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Duration (M:SS)</FormLabel>
+                  <FormLabel>Duration (M:SS) (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 3:45" {...field} disabled={isFetchingMetadata || form.formState.isSubmitting} />
+                    <Input placeholder="e.g., 3:45" {...field} disabled={form.formState.isSubmitting} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -265,7 +273,8 @@ const AddTrackDialog: React.FC = () => {
             <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={form.formState.isSubmitting || isFetchingMetadata || !metadata || isCooldownActive}
+                // Allow submission if we can manually submit (i.e., ID and Title are present)
+                disabled={!canManuallySubmit}
             >
               {form.formState.isSubmitting ? "Adding..." : "Add Track"}
             </Button>
