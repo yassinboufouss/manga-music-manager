@@ -42,7 +42,7 @@ const MusicPlayer = () => {
   // State for progress
   const [currentTime, setCurrentTime] = React.useState(0);
   const [duration, setDuration] = React.useState(0);
-  const intervalRef = useRef<number | null>(null); // FIX 1: Initialized useRef with null
+  const intervalRef = useRef<number | null>(null); 
   
   // State for loading/buffering
   const [isLoading, setIsLoading] = React.useState(false);
@@ -249,9 +249,9 @@ const MusicPlayer = () => {
   };
   
   const handleShuffle = async () => {
-      setIsShuffling(true); // FIX 2: Use setIsShuffling setter
+      setIsShuffling(true); 
       await shufflePlaylist();
-      setIsShuffling(false); // FIX 3: Use setIsShuffling setter
+      setIsShuffling(false); 
   };
 
   if (isLoadingData) {
@@ -303,7 +303,7 @@ const MusicPlayer = () => {
       <div className="flex flex-col items-center w-[50%] sm:w-1/2 max-w-xs sm:max-w-lg mx-2">
         <div className="flex space-x-2 sm:space-x-4 mb-1 items-center">
           
-          {/* Shuffle Button (New) */}
+          {/* Shuffle Button */}
           <Button 
             variant="ghost" 
             size="icon" 
@@ -387,13 +387,13 @@ const MusicPlayer = () => {
       </div>
 
       {/* Volume Control, Playback Rate, and Lyrics (Right) */}
-      <div className="flex items-center w-[25%] sm:w-1/4 justify-end space-x-2 sm:space-x-4 min-w-[80px] max-w-[25%] sm:max-w-none">
+      <div className="flex items-center w-[25%] sm:w-1/4 justify-end space-x-1 sm:space-x-4 min-w-[80px] max-w-[25%] sm:max-w-none">
         
-        {/* YouTube Link Button (New) */}
+        {/* YouTube Link Button (Mobile/Desktop) */}
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-8 w-8 sm:h-10 sm:w-10 text-foreground hover:text-primary"
+          className="h-8 w-8 text-foreground hover:text-primary"
           disabled={!currentTrack}
           aria-label="Open YouTube Video"
           asChild
@@ -407,35 +407,49 @@ const MusicPlayer = () => {
           </a>
         </Button>
         
-        {/* Lyrics Button (Visible on all screens) */}
+        {/* Lyrics Button (Mobile/Desktop) */}
         <LyricsSheet />
         
-        {/* Playback Rate Selector (Hidden on mobile) */}
-        <Select value={playbackRate.toString()} onValueChange={handleRateChange}>
-            <SelectTrigger className="w-[60px] sm:w-[80px] h-7 sm:h-8 text-[10px] sm:text-xs hidden sm:flex text-white">
-                <SelectValue placeholder="1x" />
-            </SelectTrigger>
-            <SelectContent>
-                {PLAYBACK_RATES.map(rate => (
-                    <SelectItem key={rate} value={rate.toString()}>
-                        {rate}x
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+        {/* Mute Button (Mobile only) */}
+        <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={toggleMute} 
+            className="h-8 w-8 text-foreground hover:text-primary sm:hidden"
+            aria-label="Toggle Mute"
+        >
+            {isMuted || volume === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </Button>
         
-        {/* Volume Control (Hidden on mobile) */}
-        <div className="items-center space-x-2 min-w-[100px] hidden sm:flex">
-            <Button variant="ghost" size="icon" onClick={toggleMute} className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-transparent text-foreground hover:text-primary">
-              {isMuted || volume === 0 ? <VolumeX className="h-4 w-4 sm:h-5 sm:w-5" /> : <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />}
-            </Button>
-            <Slider 
-              value={[isMuted ? 0 : volume]} 
-              onValueChange={handleVolumeChange} 
-              max={100} 
-              step={1} 
-              className="w-[100px] cursor-pointer" 
-            />
+        {/* Desktop Controls Group (Rate Selector + Volume Slider) */}
+        <div className="hidden sm:flex items-center space-x-4">
+            {/* Playback Rate Selector */}
+            <Select value={playbackRate.toString()} onValueChange={handleRateChange}>
+                <SelectTrigger className="w-[80px] h-8 text-xs text-white">
+                    <SelectValue placeholder="1x" />
+                </SelectTrigger>
+                <SelectContent>
+                    {PLAYBACK_RATES.map(rate => (
+                        <SelectItem key={rate} value={rate.toString()}>
+                            {rate}x
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            
+            {/* Volume Slider + Mute Button */}
+            <div className="flex items-center space-x-2 min-w-[100px]">
+                <Button variant="ghost" size="icon" onClick={toggleMute} className="h-8 w-8 hover:bg-transparent text-foreground hover:text-primary">
+                  {isMuted || volume === 0 ? <VolumeX className="h-4 w-4 sm:h-5 sm:w-5" /> : <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />}
+                </Button>
+                <Slider 
+                  value={[isMuted ? 0 : volume]} 
+                  onValueChange={handleVolumeChange} 
+                  max={100} 
+                  step={1} 
+                  className="w-[100px] cursor-pointer" 
+                />
+            </div>
         </div>
       </div>
     </div>
